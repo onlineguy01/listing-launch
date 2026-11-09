@@ -27,6 +27,16 @@ export interface OrderRecord {
   customerEmail?: string;
   quote: Quote;
   stripeCheckoutSessionId?: string;
+  completionReportSentAt?: string;
+}
+
+export interface PublicationCheck {
+  id: string;
+  submissionId: string;
+  scheduledFor: string;
+  checkedAt?: string;
+  result?: Finding["state"];
+  listingUrl?: string;
 }
 
 export interface SubmissionRecord {
@@ -61,5 +71,13 @@ export interface Store {
   createSubmissions(subs: Omit<SubmissionRecord, "id" | "updatedAt" | "log">[]): Promise<SubmissionRecord[]>;
   listSubmissions(filter: { orderId?: string; businessId?: string }): Promise<SubmissionRecord[]>;
   listAllSubmissions(): Promise<SubmissionRecord[]>;
+  getSubmission(id: string): Promise<SubmissionRecord | null>;
   updateSubmission(id: string, patch: Partial<SubmissionRecord>, logEvent?: string): Promise<void>;
+
+  /** Most recent complete scan for this phone number newer than `since`, for caching. */
+  findRecentScanByPhone(phoneE164: string, since: Date): Promise<ScanRecord | null>;
+
+  schedulePublicationChecks(submissionId: string, dates: Date[]): Promise<void>;
+  listDuePublicationChecks(now: Date): Promise<PublicationCheck[]>;
+  completePublicationCheck(id: string, result: Finding["state"], listingUrl?: string): Promise<void>;
 }

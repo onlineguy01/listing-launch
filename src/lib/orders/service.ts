@@ -3,6 +3,7 @@ import { getStore } from "@/lib/data";
 import { buildQuote } from "@/lib/scan/quote";
 import { getDirectory } from "@/lib/directories/registry";
 import type { OrderRecord } from "@/lib/data/store";
+import { emailOrderConfirmed } from "@/lib/email/send";
 
 export function stripeEnabled() { return !!process.env.STRIPE_SECRET_KEY; }
 
@@ -48,6 +49,7 @@ export async function markOrderPaid(orderId: string) {
   await store.updateOrder(orderId, { status: "paid", paidAt: new Date().toISOString() });
   const existing = await store.listSubmissions({ orderId });
   if (existing.length) return;
+  emailOrderConfirmed(orderId).catch((e) => console.error("order email failed", e));
   await store.createSubmissions(
     order.quote.items.map((i) => {
       const d = getDirectory(i.directoryId);

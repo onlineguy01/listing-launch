@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { CanonicalBusiness, Finding } from "@/lib/domain/types";
-import type { OrderRecord, ScanRecord, Store, SubmissionRecord } from "./store";
+import type { OrderRecord, PublicationCheck, ScanRecord, Store, SubmissionRecord } from "./store";
 
 /**
  * In-memory store for local development and demo mode. Lives on globalThis so
@@ -12,10 +12,11 @@ interface Mem {
   findings: Map<string, Finding[]>;
   orders: Map<string, OrderRecord>;
   submissions: Map<string, SubmissionRecord>;
+  checks: Map<string, PublicationCheck>;
 }
 const g = globalThis as unknown as { __llMem?: Mem };
 const mem: Mem = (g.__llMem ??= {
-  businesses: new Map(), scans: new Map(), findings: new Map(), orders: new Map(), submissions: new Map(),
+  businesses: new Map(), scans: new Map(), findings: new Map(), orders: new Map(), submissions: new Map(), checks: new Map(),
 });
 
 export class MemoryStore implements Store {
@@ -80,6 +81,29 @@ export class MemoryStore implements Store {
     return [...mem.submissions.values()].filter(
       (s) => (!filter.orderId || s.orderId === filter.orderId) && (!filter.businessId || s.businessId === filter.businessId),
     );
+  }
+  async getSubmission(id: string) { return mem.submissions.get(id) ?? null; }
+  async findRecentScanByPhone(phoneE164: string, since: Date) {
+    let best: ScanRecord | null = null;
+    for (const sc of mem.scans.values()) {
+      if (sc.status !== "complete" || new Date(sc.createdAt) < since) continue;
+      if (mem.businesses.get(sc.businessId)?.phoneE164 !== phoneE164) continue;
+      if (!best || sc.createdAt > best.createdAt) best = sc;
+    }
+    return best;
+  }
+  async schedulePublicationChecks(submissionId: string, dates: Date[]) {
+    for (const d of dates) {
+      const id = randomUUID();
+      mem.checks.set(id, { id, submissionId, scheduledFor: d.toISOString() });
+    }
+  }
+  async listDuePublicationChecks(now: Date) {
+    return [...mem.checks.values()].filter((c) => !c.checkedAt && new Date(c.scheduledFor) <= now);
+  }
+  async completePublicationCheck(id: string, result: PublicationCheck["result"], listingUrl?: string) {
+    const c = mem.checks.get(id);
+    if (c) mem.checks.set(id, { ...c, checkedAt: new Date().toISOString(), result, listingUrl });
   }
   async listAllSubmissions() { return [...mem.submissions.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)); }
   async updateSubmission(id: string, patch: Partial<SubmissionRecord>, logEvent?: string) {

@@ -27,11 +27,16 @@ without charging. Copy `.env.example` to `.env.local` and fill in keys to go liv
 | `GOOGLE_PLACES_API_KEY` | Google Business Profile discovery through the Places API |
 | `YELP_API_KEY` | Yelp discovery through the Fusion API (phone search) |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Real one-time checkout; webhook at `/api/stripe/webhook` |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `APP_URL` | Real email (report, order confirmation, owner actions, completion report). Without it, emails land in `/admin/outbox` |
+| `DATAFORSEO_LOGIN`/`DATAFORSEO_PASSWORD` + `SERP_PROVIDER=dataforseo` | Alternative search provider using header auth |
+| `CRON_SECRET` | Protects `/api/cron/recheck` (Vercel cron, daily, see `vercel.json`) |
 | `ADMIN_TOKEN` | Protects the ops status API (`x-admin-token` header) |
+| `PLAYWRIGHT_CHROMIUM_PATH` | System Chromium for the submission worker (`npm run worker`) |
 
 ```bash
-npm test        # unit tests for normalization, matching, extraction, quoting, scan runner
+npm test                 # unit + integration tests (matching, extraction, quoting, scan runner, form adapter, re-checks)
 npm run build
+npm run worker -- --dry  # submission worker, one pass, no submissions
 ```
 
 ## How it is put together
@@ -43,12 +48,17 @@ src/
     scan/[id]               Live scan progress
     report/[id]             Findings table + recommended package + checkout
     order/[id]              Post-purchase status page
-    admin                   Ops queue: task cards with copy-to-clipboard fields
+    admin                   Ops queue: task cards, status changes trigger owner emails and re-checks
+    admin/outbox            Demo-mode email outbox
     api/scan, api/checkout, api/stripe/webhook, api/admin/submissions
+    api/places/*            Server-proxied Google Places autocomplete + details
+    api/report/unlock       Email gate for the full report
+    api/cron/recheck        Daily publication re-checks
   lib/
     domain/types.ts         CanonicalBusiness, Finding, FindingState, DirectoryDefinition…
     directories/registry.ts The 15 seed directories (discovery + submission method, eligibility, price)
-    adapters/               DirectoryAdapter interface, generic search+fetch adapter, Google + Yelp API adapters
+    adapters/               DirectoryAdapter interface, generic search+fetch adapter, Google + Yelp API adapters,
+                            PlaywrightFormAdapter base (declarative field map, injected browser)
     scan/
       normalize.ts          Phone → E.164, street abbreviations, domains, legal-suffix stripping
       extract.ts            schema.org JSON-LD LocalBusiness extraction, HTML heuristics fallback
@@ -57,7 +67,10 @@ src/
       quote.ts              Findings → sellable package, with excluded reasons
       mock.ts               Deterministic simulated directory pages for demo mode
       service.ts            Input validation, start/execute scan
-    orders/service.ts       Order creation, Stripe Checkout, mark-paid → submission jobs
+    orders/service.ts       Order creation, Stripe Checkout, mark-paid → submission jobs + confirmation email
+    email/                  Mailer (Resend or outbox), templates, send helpers
+    fulfillment/            Publication re-check job, submission worker
+    places/                 Google Places API (New) client
     data/                   Store interface, in-memory store, Supabase store
 supabase/migrations/        Postgres schema with RLS
 ```
@@ -89,10 +102,29 @@ supabase/migrations/        Postgres schema with RLS
 - No CAPTCHA, MFA or identity-verification bypass. Owner-action steps are modeled as tasks, not automated.
 - The app promises listings created and corrected, not rankings or backlinks.
 
+## Lifecycle
+
+1. Scan completes → report email (if we have an address). Full report is gated behind an email.
+2. Checkout → order paid → one submission job per item → order confirmation email.
+3. Ops (or the worker) submits. Status `verification_required` emails the owner instructions.
+   Status `published` schedules re-checks at 3, 14 and 30 days.
+4. Daily cron re-verifies published listings; a vanished listing flips to `failed` for ops.
+5. When every job is terminal, the completion report goes out once and the order is `complete`.
+
+Repeat scans of the same phone number within 14 days reuse the earlier scan. Scans are
+limited to 5 per hour per IP (in-process; move to Redis when running multiple instances).
+
+## Writing a form adapter
+
+`PlaywrightFormAdapter` takes a `FormSpec`: the add-business URL, a list of
+`{ selector, value, kind }` fields, the submit selector, and the success / verification /
+blocked markers. Selectors must come from inspecting the live site in a real browser. The
+adapter never bypasses a CAPTCHA or login wall; it returns `manual_required` and ops takes over.
+
 ## Next up
 
-- Google Places autocomplete on the intake form to seed the canonical record.
-- Email: report unlock, owner verification tasks, completion report (Resend).
-- Scheduled publication re-checks (3/14/30 days) via Inngest or Trigger.dev.
-- Playwright submission adapters for the highest-volume form-based directories.
-- Rate limiting and scan caching by phone number.
+- Real-site form specs for Yellow Pages, Manta, MerchantCircle, Superpages (inspect each site first).
+- Google Business Profile OAuth flow for owner-authorized creation and claims.
+- Post-purchase intake for logo, descriptions, hours and service area.
+- Customer login (Supabase magic link) so owners can see all their orders.
+- Move rate limiting to Upstash Redis before running multiple instances.

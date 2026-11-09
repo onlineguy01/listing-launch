@@ -23,6 +23,20 @@ export function createLiveContext(log: AdapterContext["log"] = () => {}): Adapte
         const j = (await r.json()) as { organic_results?: { link: string; title?: string; snippet?: string }[] };
         return (j.organic_results ?? []).map((o) => ({ url: o.link, title: o.title, snippet: o.snippet }));
       }
+      if (provider === "dataforseo") {
+        const login = process.env.DATAFORSEO_LOGIN, password = process.env.DATAFORSEO_PASSWORD;
+        if (!login || !password) throw new Error("DATAFORSEO_LOGIN/PASSWORD not set");
+        const r = await fetch("https://api.dataforseo.com/v3/serp/google/organic/live/regular", {
+          method: "POST",
+          headers: { Authorization: "Basic " + Buffer.from(`${login}:${password}`).toString("base64"), "Content-Type": "application/json" },
+          body: JSON.stringify([{ keyword: query, location_code: 2840, language_code: "en", depth: 10 }]),
+          signal: AbortSignal.timeout(20000),
+        });
+        if (!r.ok) throw new Error(`dataforseo ${r.status}`);
+        const j = (await r.json()) as { tasks?: { result?: { items?: { type: string; url?: string; title?: string; description?: string }[] }[] }[] };
+        const items = j.tasks?.[0]?.result?.[0]?.items ?? [];
+        return items.filter((i) => i.type === "organic" && i.url).map((i) => ({ url: i.url!, title: i.title, snippet: i.description }));
+      }
       throw new Error(`Unsupported SERP_PROVIDER ${provider}`);
     },
     async fetchHtml(url: string): Promise<string | null> {
@@ -45,5 +59,7 @@ export function createLiveContext(log: AdapterContext["log"] = () => {}): Adapte
 }
 
 export function hasLiveKeys(): boolean {
+  const provider = process.env.SERP_PROVIDER ?? "serpapi";
+  if (provider === "dataforseo") return !!(process.env.DATAFORSEO_LOGIN && process.env.DATAFORSEO_PASSWORD);
   return !!process.env.SERPAPI_KEY;
 }

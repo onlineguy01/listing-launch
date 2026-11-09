@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { CanonicalBusiness, Finding } from "@/lib/domain/types";
-import type { OrderRecord, ScanRecord, Store, SubmissionRecord } from "./store";
+import type { OrderRecord, PublicationCheck, ScanRecord, Store, SubmissionRecord } from "./store";
 
 /**
  * Supabase-backed store using the service-role key (server only). Maps the
@@ -81,7 +81,7 @@ export class SupabaseStore implements Store {
   async updateOrder(id: string, patch: Partial<OrderRecord>) {
     await this.sb.from("orders").update({
       status: patch.status, paid_at: patch.paidAt, customer_email: patch.customerEmail,
-      stripe_checkout_session_id: patch.stripeCheckoutSessionId,
+      stripe_checkout_session_id: patch.stripeCheckoutSessionId, completion_report_sent_at: patch.completionReportSentAt,
     }).eq("id", id);
   }
 
@@ -105,6 +105,26 @@ export class SupabaseStore implements Store {
     if (filter.orderId) q = q.eq("order_items.order_id", filter.orderId);
     const { data } = await q;
     return (data ?? []).map(rowToSub);
+  }
+  async getSubmission(id: string) {
+    const { data } = await this.sb.from("submission_jobs").select("*, order_items(order_id, action)").eq("id", id).maybeSingle();
+    return data ? rowToSub(data) : null;
+  }
+  async findRecentScanByPhone(phoneE164: string, since: Date) {
+    const { data } = await this.sb.from("scan_jobs").select("*, businesses!inner(phone_e164)")
+      .eq("status", "complete").eq("businesses.phone_e164", phoneE164).gte("created_at", since.toISOString())
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+    return data ? rowToScan(data) : null;
+  }
+  async schedulePublicationChecks(submissionId: string, dates: Date[]) {
+    await this.sb.from("publication_checks").insert(dates.map((d) => ({ submission_job_id: submissionId, scheduled_for: d.toISOString() })));
+  }
+  async listDuePublicationChecks(now: Date) {
+    const { data } = await this.sb.from("publication_checks").select().is("checked_at", null).lte("scheduled_for", now.toISOString()).limit(200);
+    return (data ?? []).map((r) => ({ id: r.id, submissionId: r.submission_job_id, scheduledFor: r.scheduled_for }));
+  }
+  async completePublicationCheck(id: string, result: PublicationCheck["result"], listingUrl?: string) {
+    await this.sb.from("publication_checks").update({ checked_at: new Date().toISOString(), result, listing_url: listingUrl }).eq("id", id);
   }
   async listAllSubmissions() {
     const { data } = await this.sb.from("submission_jobs").select("*, order_items(order_id, action)").order("updated_at", { ascending: false }).limit(500);
@@ -152,6 +172,7 @@ function rowToOrder(r: any): OrderRecord {
   return {
     id: r.id, businessId: r.business_id, scanId: r.scan_job_id, status: r.status, createdAt: r.created_at,
     paidAt: r.paid_at ?? undefined, customerEmail: r.customer_email ?? undefined, stripeCheckoutSessionId: r.stripe_checkout_session_id ?? undefined,
+    completionReportSentAt: r.completion_report_sent_at ?? undefined,
     quote: { packageName: r.package_name, items, subtotalCents: r.subtotal_cents, feesCents: r.fees_cents, totalCents: r.total_cents, excluded: [] },
   };
 }
