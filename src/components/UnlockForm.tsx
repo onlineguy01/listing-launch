@@ -19,8 +19,8 @@ export function UnlockForm({ scanId, hidden }: { scanId: string; hidden: number 
 
   return (
     <form onSubmit={go} className="card grid gap-3 p-6 text-center">
-      <h2 className="text-lg font-semibold">See all {hidden} remaining directories and your fix-it package</h2>
-      <p className="text-sm text-muted">Enter your email and we&apos;ll unlock the full report here and send you a copy with evidence links.</p>
+      <h2 className="text-lg font-semibold">See your one-time price{hidden ? ` for ${hidden} listings` : ""}</h2>
+      <p className="text-sm text-muted">Enter your email to see package prices and get a copy of this report with evidence links.</p>
       <div className="mx-auto flex w-full max-w-md gap-2">
         <input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@business.com" />
         <button className="btn btn-primary whitespace-nowrap" disabled={busy}>{busy ? "Unlocking…" : "Unlock report"}</button>

@@ -2,20 +2,18 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { getStore } from "@/lib/data";
-import { getDirectory } from "@/lib/directories/registry";
 import { buildPackages, formatCents, GUARANTEE_DAYS, type PackageLine } from "@/lib/pricing/packages";
 import { assemblePacks } from "@/lib/pricing/packs";
 import { PackTable } from "@/components/PackTable";
-import { StateBadge, STATE_LABEL } from "@/components/StateBadge";
+import { STATE_LABEL } from "@/components/StateBadge";
 import { CheckoutButton } from "@/components/CheckoutButton";
 import { UnlockForm } from "@/components/UnlockForm";
-import type { Finding, FindingState } from "@/lib/domain/types";
+import type { FindingState } from "@/lib/domain/types";
 import { formatPhoneDisplay } from "@/lib/scan/normalize";
 
 export const dynamic = "force-dynamic";
 
 const ORDER: FindingState[] = ["incorrect", "not_found", "possible_match", "verified_accurate", "unable_to_verify", "not_eligible"];
-const PREVIEW_ROWS = 3;
 
 const ACTION_LABEL: Record<PackageLine["action"], string> = {
   create: "Create listing", correct: "Fix listing", verify: "Submit and verify", review: "Review, then fix", none: "Already accurate",
@@ -37,10 +35,6 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
 
   const packs = assemblePacks(biz, findings);
   const packages = buildPackages(findings);
-  const sellableIds = new Set(packages.flatMap((p) => p.lines.map((l) => l.directoryId)));
-  const sellableFindings = findings.filter((f) => sellableIds.has(f.directoryId) || getDirectory(f.directoryId).sellable);
-  const visible = unlocked ? sellableFindings : sellableFindings.slice(0, PREVIEW_ROWS);
-  const hiddenCount = sellableFindings.length - visible.length;
 
   return (
     <div className="grid gap-10">
@@ -84,23 +78,15 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <PackTable rows={packs.local.rows} emptyText="We have not built a local pack for your city yet. Tell us your chamber and we will add it." />
       </section>
 
-      {/* Sellable directories + packages */}
+      {/* Packages */}
       <section className="grid gap-6 lg:grid-cols-[1.3fr_1fr] lg:items-start">
         <div className="grid gap-4">
           <div>
-            <h2 className="text-xl font-semibold">What we checked in detail</h2>
-            <p className="text-sm text-muted">Evidence for every directory we can submit to on your behalf. Anything we cannot confirm live within {GUARANTEE_DAYS} days after purchase is refunded.</p>
+            <h2 className="text-xl font-semibold">Fix it once</h2>
+            <p className="text-sm text-muted">We create, correct and verify every directory marked “Directory” above, on your behalf. Anything we cannot confirm live within {GUARANTEE_DAYS} days of purchase is refunded automatically. Core profiles, marketplaces and professional profiles are yours to claim; we have told you exactly what to do with each.</p>
           </div>
-          <div className="card overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-background text-left text-xs text-muted"><tr><th className="px-4 py-2">Directory</th><th className="px-4 py-2">Status</th><th className="px-4 py-2">Details</th></tr></thead>
-              <tbody>
-                {visible.map((f) => <FindingRow key={f.directoryId} f={f} />)}
-                {!unlocked && hiddenCount > 0 && <tr className="border-t border-border"><td colSpan={3} className="px-4 py-3 text-center text-xs text-muted">+ {hiddenCount} more directories, unlock below</td></tr>}
-              </tbody>
-            </table>
-          </div>
-          {!unlocked && <UnlockForm scanId={id} hidden={hiddenCount} />}
+          {!unlocked && <UnlockForm scanId={id} hidden={packages[1]?.actionable ?? 0} />}
+          {unlocked && <p className="text-sm text-muted">A copy of this report with evidence links is in your inbox. Pick a package to get started.</p>}
         </div>
 
         <aside className="grid gap-4 lg:sticky lg:top-6">
@@ -129,24 +115,5 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         </aside>
       </section>
     </div>
-  );
-}
-
-function FindingRow({ f }: { f: Finding }) {
-  const d = getDirectory(f.directoryId);
-  const show = (field: string, v: string) => (field === "phone" ? formatPhoneDisplay(v) : v);
-  return (
-    <tr className="border-t border-border align-top">
-      <td className="px-4 py-3 font-medium">{d.name}{f.listingUrl && <a href={f.listingUrl} target="_blank" rel="noreferrer" className="block text-xs text-accent hover:underline">View listing ↗</a>}</td>
-      <td className="px-4 py-3"><StateBadge state={f.state} /></td>
-      <td className="px-4 py-3 text-muted">
-        {f.state === "incorrect" && f.diffs.map((x) => <div key={x.field}><span className="font-medium text-foreground">{x.field}</span>: shows “{show(x.field, x.observed)}”, should be “{show(x.field, x.expected)}”</div>)}
-        {f.state === "not_found" && "No listing matched your name, phone or website."}
-        {f.state === "possible_match" && "A similar listing exists. We review this by hand before touching it."}
-        {f.state === "verified_accurate" && "Name, phone and address match."}
-        {f.state === "unable_to_verify" && "We could not check this directory automatically. We submit, then verify it live."}
-        {f.state === "not_eligible" && (f.evidence.notes ?? "Not applicable to your business type.")}
-      </td>
-    </tr>
   );
 }
