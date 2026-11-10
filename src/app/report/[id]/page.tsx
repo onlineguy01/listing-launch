@@ -53,6 +53,19 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         ))}
       </div>
 
+      {scan.gap && (
+        <section className="card p-6 grid gap-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-xl font-semibold">Who ranks for “{scan.gap.keyword}”</h2>
+            <span className="text-sm text-muted">{scan.gap.ourRank ? `You are #${scan.gap.ourRank} on Google Maps` : "You are not on page 1 of Google Maps"}</span>
+          </div>
+          <p className="text-sm text-muted">We looked at the sites that link to these {scan.gap.competitors.length} competitors and found {scan.gap.candidates} places they are listed that you are not. The ones that passed our checks appear in your niche and local packs below.</p>
+          <ol className="grid gap-1 text-sm sm:grid-cols-2">
+            {scan.gap.competitors.map((c) => <li key={c.domain} className="flex justify-between gap-2"><span>{c.rank}. {c.name}</span><span className="text-muted">{c.reviews} reviews</span></li>)}
+          </ol>
+        </section>
+      )}
+
       {/* Core pack */}
       <section className="grid gap-3">
         <div>

@@ -41,7 +41,7 @@ export class SupabaseStore implements Store {
   }
   async updateScan(id: string, patch: Partial<ScanRecord>) {
     await this.sb.from("scan_jobs").update({
-      status: patch.status, completed_at: patch.completedAt, directories_done: patch.directoriesDone, error: patch.error,
+      status: patch.status, completed_at: patch.completedAt, directories_done: patch.directoriesDone, error: patch.error, gap: patch.gap,
     }).eq("id", id);
   }
   async addFinding(scanId: string, businessId: string, f: Finding) {
@@ -216,7 +216,7 @@ function rowToScan(r: any): ScanRecord {
   return {
     id: r.id, businessId: r.business_id, status: r.status, createdAt: r.created_at, completedAt: r.completed_at ?? undefined,
     directoriesTotal: r.directories_total, directoriesDone: r.directories_done, requesterEmail: r.requester_email ?? undefined,
-    mode: "live", error: r.error ?? undefined,
+    mode: "live", error: r.error ?? undefined, gap: r.gap ?? undefined,
   };
 }
 function rowToOrder(r: any): OrderRecord {

@@ -71,12 +71,18 @@ export async function discoverNicheSites(nicheRaw: string, industry: CategoryId)
 export async function probeHost(host: string): Promise<NonNullable<NicheSite["probe"]>> {
   const h = host.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
   const checkedAt = new Date().toISOString();
-  try {
-    const r = await fetch(`https://${h}/`, { headers: { "User-Agent": "Mozilla/5.0 (compatible; LocalBusinessBacklinks/1.0)", Accept: "text/html" }, redirect: "follow", signal: AbortSignal.timeout(12000) });
-    const html = r.ok ? (await r.text()).toLowerCase() : "";
-    const signals = ["add your business", "list your business", "claim your", "get listed", "add listing", "join", "member directory", "find a", "directory"].filter((k) => html.includes(k));
-    return { ok: r.ok && html.length > 1500, status: r.status, signals, checkedAt };
-  } catch {
-    return { ok: false, signals: [], checkedAt };
+  const attempts = h.startsWith("www.") ? [h, h.slice(4)] : [h, `www.${h}`];
+  let status: number | undefined;
+  for (const target of attempts) {
+    try {
+      const r = await fetch(`https://${target}/`, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36", Accept: "text/html" }, redirect: "follow", signal: AbortSignal.timeout(12000) });
+      status = r.status;
+      const html = r.ok ? (await r.text()).toLowerCase() : "";
+      if (r.ok && html.length > 1500) {
+        const signals = ["add your business", "list your business", "claim your", "get listed", "add listing", "join", "member directory", "find a", "directory"].filter((k) => html.includes(k));
+        return { ok: true, status: r.status, signals, checkedAt };
+      }
+    } catch { /* try the next form */ }
   }
+  return { ok: false, status, signals: [], checkedAt };
 }

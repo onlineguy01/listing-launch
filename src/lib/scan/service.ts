@@ -10,6 +10,7 @@ import { ADAPTERS } from "@/lib/adapters";
 import { CATEGORIES, normalizeCategory } from "@/lib/directories/categories";
 import { emailReportReady } from "@/lib/email/send";
 import { discoverNicheSites } from "@/lib/niche/discover";
+import { computeGap, gapEnabled, storeGapSuggestions } from "@/lib/competitive/gap";
 
 export const BusinessInput = z.object({
   name: z.string().trim().min(2).max(120),
@@ -113,6 +114,13 @@ export async function executeScan(scanId: string) {
     if (to) await emailReportReady(scanId, to).catch((e) => console.error("report email failed", e));
     // Niche directory discovery runs once per new niche; results land in admin review.
     if (biz.niche) discoverNicheSites(biz.niche, normalizeCategory(biz.categories[0] ?? "other")).catch((e) => console.error("niche discovery failed", e));
+    // Competitor citation gap: page-1 Maps competitors → their referring domains → what we are missing.
+    if (gapEnabled() && scan.mode === "live" && biz.city) {
+      computeGap(biz, { maxCompetitors: 8, budgetUsd: Number(process.env.GAP_BUDGET_USD ?? 0.4) }).then(async (gap) => {
+        await store.updateScan(scanId, { gap: { keyword: gap.keyword, ourRank: gap.ourRank, ourReferringDomains: gap.ourReferringDomains, competitors: gap.competitors.map((c) => ({ name: c.name, domain: c.domain, rank: c.rank, reviews: c.reviews })), candidates: gap.candidates.length, costUsd: gap.costUsd } });
+        await storeGapSuggestions(biz, gap);
+      }).catch((e) => console.error("competitor gap failed", e));
+    }
   } catch (e) {
     await store.updateScan(scanId, { status: "failed", error: String(e) });
   }

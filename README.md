@@ -105,6 +105,18 @@ Yelp, Manta, Angi, LinkedIn and Facebook block server-side page fetches, so they
   The report shows a Niche pack with approved rows first and suggested rows labeled. Nothing from a niche pack is
   sold until it is promoted into the registry (`industryPacks.ts` / `registry.ts`).
 
+## Competitor citation gap
+
+`src/lib/competitive/gap.ts`, run after every live scan (budget-capped by `GAP_BUDGET_USD`, default $0.40):
+
+1. Google Maps page 1 for "<niche> <city> <state>" gives the competitors that actually rank, and our own rank.
+2. DataForSEO referring domains for each competitor (~3¢ each) and for us.
+3. Domains that link to competitors but not to us are candidates. Scraper farms (zero authority, link to every
+   business in town), link sellers and junk TLDs are dropped; known pack sites are flagged; the rest are probed and
+   stored as niche-site suggestions with the coverage note, for ops review.
+4. The report shows the competitor list, our Maps rank, and the count of gaps; survivors appear in the niche and
+   local packs. Migration 0006 adds `scan_jobs.gap`.
+
 ## Packs: core, industry, local
 
 Every business gets three packs on its report (`src/lib/pricing/packs.ts`):

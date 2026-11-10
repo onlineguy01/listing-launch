@@ -17,6 +17,8 @@ export interface ScanRecord {
   requesterEmail?: string;
   mode: "mock" | "live";
   error?: string;
+  /** Competitor gap summary (page-1 competitors, our rank, cost). Suggestions live in niche_sites. */
+  gap?: { keyword: string; ourRank?: number; ourReferringDomains: number; competitors: { name: string; domain: string; rank: number; reviews: number }[]; candidates: number; costUsd: number };
 }
 
 export interface OrderRecord {

@@ -48,7 +48,9 @@ export const LOCAL_SITES: LocalSite[] = [
   { id: "richardson_chamber", name: "Richardson Chamber of Commerce", host: "www.richardsonchamber.com", metro: "dfw", kind: "chamber", cities: ["richardson"] },
   { id: "dallas_black_chamber", name: "Dallas Black Chamber of Commerce", host: "www.dallasblackchamber.org", metro: "dfw", kind: "chamber", note: "Where applicable." },
   { id: "gdhcc", name: "Greater Dallas Hispanic Chamber", host: "www.gdhcc.com", metro: "dfw", kind: "chamber", note: "Where applicable." },
-  { id: "burleson_chamber", name: "Burleson Area Chamber of Commerce", host: "www.burlesonareachamber.com", metro: "dfw", kind: "chamber", cities: ["burleson", "joshua", "crowley"], note: "Membership; member directory listing with link. Strongest local signal for a Burleson business." },
+  { id: "burleson_chamber", name: "Burleson Area Chamber of Commerce", host: "burlesonchamber.com", metro: "dfw", kind: "chamber", cities: ["burleson", "joshua", "crowley"], note: "Membership; member directory listing with link. Links to 6 of the 11 page-1 Burleson roofers (Nov 2026 gap analysis)." },
+  { id: "cleburne_chamber", name: "Cleburne Chamber of Commerce", host: "cleburnechamber.com", metro: "dfw", kind: "chamber", cities: ["cleburne", "burleson", "joshua"], note: "Johnson County chamber; member directory with link." },
+  { id: "fwmbcc", name: "Fort Worth Metropolitan Black Chamber of Commerce", host: "fwmbcc.org", metro: "dfw", kind: "chamber", cities: FW_SIDE, note: "Where applicable." },
   { id: "ntx_bbb", name: "BBB Serving North Central Texas", host: "www.bbb.org", metro: "dfw", kind: "regional", note: "Covered by the BBB directory check." },
 ];
 
