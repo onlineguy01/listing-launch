@@ -7,7 +7,7 @@ import { runScan } from "./runner";
 import { createMockContext } from "./mock";
 import { createLiveContext, hasLiveKeys } from "./context";
 import { ADAPTERS } from "@/lib/adapters";
-import { CATEGORIES } from "@/lib/directories/categories";
+import { CATEGORIES, normalizeCategory } from "@/lib/directories/categories";
 import { emailReportReady } from "@/lib/email/send";
 
 export const BusinessInput = z.object({
@@ -18,7 +18,7 @@ export const BusinessInput = z.object({
   postalCode: z.string().trim().max(10).optional().or(z.literal("")),
   phone: z.string().trim().max(30).optional().or(z.literal("")),
   website: z.string().trim().max(200).optional().or(z.literal("")),
-  category: z.enum(Object.keys(CATEGORIES) as [keyof typeof CATEGORIES, ...(keyof typeof CATEGORIES)[]]),
+  category: z.string().transform(normalizeCategory),
   hideAddress: z.preprocess((v) => v === true || v === "true" || v === "on", z.boolean()).default(false),
   email: z.string().trim().email().optional().or(z.literal("")),
   googlePlaceId: z.string().trim().max(200).optional().or(z.literal("")),

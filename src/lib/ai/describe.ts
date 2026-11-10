@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import type { CanonicalBusiness } from "@/lib/domain/types";
-import { CATEGORIES, type CategoryId } from "@/lib/directories/categories";
+import { CATEGORIES, normalizeCategory, type CategoryId } from "@/lib/directories/categories";
 
 export const Descriptions = z.object({
   short: z.string().describe("Under 160 characters. One sentence. No marketing superlatives."),
@@ -45,7 +45,7 @@ export async function draftDescriptions(biz: CanonicalBusiness): Promise<{ draft
 export function factsList(biz: CanonicalBusiness): string {
   const lines = [
     `Name: ${biz.name}`,
-    `Type: ${biz.categories.map((c) => CATEGORIES[c as CategoryId] ?? c).join(", ")}`,
+    `Type: ${biz.categories.map((c) => CATEGORIES[normalizeCategory(c)]).join(", ")}`,
     `Location: ${biz.hideAddress ? `serves ${biz.city}, ${biz.state} (no public storefront)` : `${biz.city}, ${biz.state}`}`,
   ];
   if (biz.serviceArea?.length) lines.push(`Service area: ${biz.serviceArea.join(", ")}`);
@@ -58,7 +58,7 @@ export function factsList(biz: CanonicalBusiness): string {
 
 /** Deterministic fallback built from the same facts. */
 export function templateDescriptions(biz: CanonicalBusiness): DescriptionsT {
-  const type = categoryNoun(biz.categories[0] as CategoryId);
+  const type = categoryNoun(normalizeCategory(biz.categories[0] ?? "other"));
   const where = biz.hideAddress ? `serving ${biz.city}, ${biz.state}` : `in ${biz.city}, ${biz.state}`;
   const services = biz.services?.length ? ` Services include ${joinHuman(biz.services)}.` : "";
   const area = biz.serviceArea?.length ? ` The company serves ${joinHuman(biz.serviceArea)}.` : "";
@@ -69,17 +69,17 @@ export function templateDescriptions(biz: CanonicalBusiness): DescriptionsT {
 }
 
 function categoryNoun(c?: CategoryId): string {
-  switch (c) {
-    case "home_services": return "home services company";
-    case "professional_services": return "professional services firm";
-    case "health": return "health and wellness provider";
-    case "restaurant": return "restaurant";
-    case "retail": return "retail store";
-    case "automotive": return "automotive business";
-    case "beauty": return "beauty and personal care business";
-    case "real_estate": return "real estate business";
-    default: return "local business";
-  }
+  const nouns: Partial<Record<CategoryId, string>> = {
+    home_services: "home services company", professional_services: "professional services firm", healthcare: "healthcare provider",
+    dental: "dental practice", restaurant: "restaurant", hotel_travel: "lodging business", retail: "retail store",
+    auto_dealer: "auto dealership", auto_repair: "auto repair shop", beauty: "beauty and personal care business",
+    fitness: "fitness and wellness business", real_estate: "real estate business", legal: "law firm", pet: "pet services business",
+    weddings_events: "events business", childcare_education: "childcare and education provider", senior_care: "senior care provider",
+    financial: "financial services firm", b2b_agency: "agency", software_it: "software and IT services company",
+    manufacturing: "manufacturer", nonprofit: "nonprofit organization", cannabis: "cannabis business", moving_storage: "moving and storage company",
+    creative: "creative studio", religious: "religious organization", funeral: "funeral services provider",
+  };
+  return (c && nouns[c]) ?? "local business";
 }
 
 function joinHuman(items: string[]): string {

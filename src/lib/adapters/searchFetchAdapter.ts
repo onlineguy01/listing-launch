@@ -3,6 +3,7 @@ import type { AdapterContext, DirectoryAdapter } from "./types";
 import { extractHeuristic, extractJsonLd } from "@/lib/scan/extract";
 import { classify, matchListing, type MatchResult } from "@/lib/scan/match";
 import { normalizePhone } from "@/lib/scan/normalize";
+import { normalizeCategory } from "@/lib/directories/categories";
 
 /**
  * Generic adapter for directories we discover via `site:` search + page fetch.
@@ -15,7 +16,7 @@ export class SearchFetchAdapter implements DirectoryAdapter {
   eligibility(biz: CanonicalBusiness): Eligibility {
     if (!this.def.active) return { eligible: false, reason: "Directory inactive" };
     if (!this.def.eligibleCountries.includes(biz.country)) return { eligible: false, reason: "Country not supported" };
-    if (this.def.eligibleCategories && !biz.categories.some((c) => this.def.eligibleCategories!.includes(c)))
+    if (this.def.eligibleCategories && !biz.categories.map(normalizeCategory).some((c) => this.def.eligibleCategories!.includes(c)))
       return { eligible: false, reason: `Only for ${this.def.eligibleCategories.join(", ")}` };
     if (biz.hideAddress && !this.def.allowsHiddenAddress)
       return { eligible: false, reason: "Requires a public street address" };

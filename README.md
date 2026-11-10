@@ -93,6 +93,18 @@ supabase/migrations/        Postgres schema with RLS
 
 Yelp, Manta, Angi, LinkedIn and Facebook block server-side page fetches, so they need API access or an owner-assisted check.
 
+## Packs: core, industry, local
+
+Every business gets three packs on its report (`src/lib/pricing/packs.ts`):
+
+- **Core pack** (`CORE_IDS`): the universal set. Owner-managed profiles are checked and explained; directories are handled.
+- **Industry pack** (`src/lib/directories/industryPacks.ts`): 5–8 sites per industry across a 25-industry taxonomy
+  (`src/lib/directories/categories.ts`). Each site has a kind: `directory` (we can submit once an adapter exists),
+  `marketplace` (merchant onboarding; owner signs up), `profile` (tied to a licensed person; owner claims). Marketplaces
+  and profiles are never sold. A site borrows the scan verdict of the matching registry entry when one exists.
+- **Local pack** (`src/lib/directories/localPacks.ts`): chambers, tourism bureaus and regional directories by metro,
+  filtered by city. DFW is built; add a metro by adding its cities and sites.
+
 ## Pricing model: packages, owner-managed profiles, and the guarantee
 
 - **Owner-managed profiles are never sold.** Google Business Profile, Apple, Bing, Yelp, Facebook, Nextdoor, LinkedIn

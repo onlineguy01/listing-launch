@@ -194,22 +194,22 @@ values
 ),
 (
   'healthgrades', 'Healthgrades', 'https://www.healthgrades.com/', array['healthgrades.com']::text[], 'industry', 'none'::discovery_method, 'manual'::submission_method,
-  array['email_confirm']::owner_task_type[], array['health']::text[], array['US']::text[], true,
+  array['email_confirm']::owner_task_type[], array['healthcare','dental']::text[], array['US']::text[], true,
   0, 800, 10, false, 'Indexes individual providers, not practices; owner (provider) must claim. Report-only when added.'
 ),
 (
   'zocdoc', 'Zocdoc', 'https://www.zocdoc.com/', array['zocdoc.com']::text[], 'industry', 'none'::discovery_method, 'manual'::submission_method,
-  array['email_confirm']::owner_task_type[], array['health']::text[], array['US']::text[], true,
+  array['email_confirm']::owner_task_type[], array['healthcare','dental']::text[], array['US']::text[], true,
   0, 800, 10, false, 'Bot wall (403); provider-claimed.'
 ),
 (
   'vitals', 'Vitals', 'https://www.vitals.com/', array['vitals.com']::text[], 'industry', 'none'::discovery_method, 'manual'::submission_method,
-  array['email_confirm']::owner_task_type[], array['health']::text[], array['US']::text[], true,
+  array['email_confirm']::owner_task_type[], array['healthcare','dental']::text[], array['US']::text[], true,
   0, 800, 10, false, 'Bot wall (403); provider-claimed.'
 ),
 (
   'webmd', 'WebMD Provider Directory', 'https://doctor.webmd.com/', array['doctor.webmd.com','webmd.com']::text[], 'industry', 'none'::discovery_method, 'manual'::submission_method,
-  array['email_confirm']::owner_task_type[], array['health']::text[], array['US']::text[], true,
+  array['email_confirm']::owner_task_type[], array['healthcare','dental']::text[], array['US']::text[], true,
   0, 800, 10, false, 'Client-rendered results; provider-claimed.'
 ),
 (

@@ -3,7 +3,9 @@ import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { getStore } from "@/lib/data";
 import { getDirectory } from "@/lib/directories/registry";
-import { buildPackages, formatCents, GUARANTEE_DAYS, ownerManagedRows, type PackageLine } from "@/lib/pricing/packages";
+import { buildPackages, formatCents, GUARANTEE_DAYS, type PackageLine } from "@/lib/pricing/packages";
+import { assemblePacks } from "@/lib/pricing/packs";
+import { PackTable } from "@/components/PackTable";
 import { StateBadge, STATE_LABEL } from "@/components/StateBadge";
 import { CheckoutButton } from "@/components/CheckoutButton";
 import { UnlockForm } from "@/components/UnlockForm";
@@ -33,7 +35,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const jar = await cookies();
   const unlocked = !!biz.ownerEmail || !!jar.get("ll_email")?.value || process.env.REPORT_GATE === "off";
 
-  const ownerRows = ownerManagedRows(findings);
+  const packs = assemblePacks(biz, findings);
   const packages = buildPackages(findings);
   const sellableIds = new Set(packages.flatMap((p) => p.lines.map((l) => l.directoryId)));
   const sellableFindings = findings.filter((f) => sellableIds.has(f.directoryId) || getDirectory(f.directoryId).sellable);
@@ -55,40 +57,39 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         ))}
       </div>
 
-      {/* Owner-managed profiles: report only, never sold */}
+      {/* Core pack */}
       <section className="grid gap-3">
         <div>
-          <h2 className="text-xl font-semibold">Your core profiles</h2>
-          <p className="text-sm text-muted">Only the owner can create or claim these. We check them for you and tell you exactly what to do. We never charge for them.</p>
+          <h2 className="text-xl font-semibold">Core pack: every business</h2>
+          <p className="text-sm text-muted">The profiles and directories customers and search engines check first. Core profiles can only be claimed by the owner; we check them and tell you what to do, free. The rest we handle for you.</p>
         </div>
-        <div className="card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-background text-left text-xs text-muted"><tr><th className="px-4 py-2">Profile</th><th className="px-4 py-2">Status</th><th className="px-4 py-2">What to do</th></tr></thead>
-            <tbody>
-              {ownerRows.map((r) => (
-                <tr key={r.directoryId} className="border-t border-border align-top">
-                  <td className="px-4 py-3 font-medium">{r.directoryName}{r.listingUrl && <a href={r.listingUrl} target="_blank" rel="noreferrer" className="block text-xs text-accent hover:underline">View listing ↗</a>}</td>
-                  <td className="px-4 py-3"><StateBadge state={r.state} /></td>
-                  <td className="px-4 py-3 text-muted">
-                    {r.state === "verified_accurate" && "Nothing to do. Name, phone and address match."}
-                    {r.state === "incorrect" && <>{r.diffs.map((x) => <div key={x.field}><span className="font-medium text-foreground">{x.field}</span>: shows “{x.field === "phone" ? formatPhoneDisplay(x.observed) : x.observed}”, should be “{x.field === "phone" ? formatPhoneDisplay(x.expected) : x.expected}”</div>)}<div className="mt-1">{r.howTo}</div></>}
-                    {r.state === "not_found" && <>We could not find a listing. {r.howTo} {r.claimUrl && <a className="text-accent hover:underline" href={r.claimUrl} target="_blank" rel="noreferrer">Start here ↗</a>}</>}
-                    {r.state === "possible_match" && "A similar listing exists. Check whether it is yours before creating a new one."}
-                    {r.state === "unable_to_verify" && <>We could not check this one automatically. {r.howTo}</>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <PackTable rows={packs.core} />
+      </section>
+
+      {/* Industry pack */}
+      <section className="grid gap-3">
+        <div>
+          <h2 className="text-xl font-semibold">Industry pack: {packs.categoryLabel}</h2>
+          <p className="text-sm text-muted">Where customers in your industry look. <span className="text-warn">Marketplaces</span> need merchant onboarding and <span className="text-neutral">professional profiles</span> are tied to a licensed person, so you sign up for those; we tell you whether you are there. Plain directories we can submit for you.</p>
         </div>
+        <PackTable rows={packs.industry} emptyText="No industry-specific sites for this category yet. The core pack still applies." />
+      </section>
+
+      {/* Local pack */}
+      <section className="grid gap-3">
+        <div>
+          <h2 className="text-xl font-semibold">Local pack{packs.local.metroName ? `: ${packs.local.metroName}` : ""}</h2>
+          <p className="text-sm text-muted">Chambers, tourism bureaus and regional directories. The most relevant links a local business can earn. Most involve a membership fee, which we pass through at cost.</p>
+        </div>
+        <PackTable rows={packs.local.rows} emptyText="We have not built a local pack for your city yet. Tell us your chamber and we will add it." />
       </section>
 
       {/* Sellable directories + packages */}
       <section className="grid gap-6 lg:grid-cols-[1.3fr_1fr] lg:items-start">
         <div className="grid gap-4">
           <div>
-            <h2 className="text-xl font-semibold">Directories we can handle for you</h2>
-            <p className="text-sm text-muted">We create, correct and verify these on your behalf. Anything we cannot confirm live within {GUARANTEE_DAYS} days is refunded.</p>
+            <h2 className="text-xl font-semibold">What we checked in detail</h2>
+            <p className="text-sm text-muted">Evidence for every directory we can submit to on your behalf. Anything we cannot confirm live within {GUARANTEE_DAYS} days after purchase is refunded.</p>
           </div>
           <div className="card overflow-hidden">
             <table className="w-full text-sm">

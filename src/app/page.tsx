@@ -1,5 +1,7 @@
 import { IntakeForm } from "@/components/IntakeForm";
 import { DIRECTORIES } from "@/lib/directories/registry";
+import { industryPackSummary } from "@/lib/pricing/packs";
+import { KIND_LABEL } from "@/lib/directories/industryPacks";
 
 const ACTIVE = DIRECTORIES.filter((d) => d.active);
 const CORE = ACTIVE.filter((d) => !d.sellable);
@@ -48,8 +50,8 @@ export default function Home() {
 
       <section id="directories" className="grid gap-6">
         <div>
-          <h2 className="text-2xl font-semibold">Every directory we check</h2>
-          <p className="text-muted">{ACTIVE.length} today, growing every month. Your report covers all of them.</p>
+          <h2 className="text-2xl font-semibold">Three packs for every business</h2>
+          <p className="text-muted">A core pack everyone needs, an industry pack for where your customers actually look, and a local pack for your city.</p>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
           <div className="card p-6 grid content-start gap-3">
@@ -79,6 +81,24 @@ export default function Home() {
               );
             })}
           </div>
+        </div>
+
+        <div className="grid gap-3">
+          <h3 className="font-semibold">Industry packs</h3>
+          <p className="text-sm text-muted">Pick your industry on the form and your report includes the sites below. Marketplaces and professional profiles are labeled: you sign up for those, and we tell you whether you are there.</p>
+          <div className="grid gap-2 md:grid-cols-2">
+            {industryPackSummary().map((p) => (
+              <details key={p.id} className="card px-4 py-3">
+                <summary className="cursor-pointer text-sm font-medium">{p.label} <span className="text-muted font-normal">· {p.sites.length} sites</span></summary>
+                <ul className="mt-2 flex flex-wrap gap-2">
+                  {p.sites.map((s) => (
+                    <li key={s.id} className={`rounded-full border px-2.5 py-0.5 text-xs ${s.kind === "marketplace" ? "border-warn/40 text-warn" : s.kind === "profile" ? "border-border text-muted" : "border-accent/40 text-accent"}`} title={KIND_LABEL[s.kind]}>{s.name}</li>
+                  ))}
+                </ul>
+              </details>
+            ))}
+          </div>
+          <p className="text-xs text-muted">Teal: directory we can submit for you. Amber: marketplace. Grey: professional profile.</p>
         </div>
       </section>
     </div>
