@@ -9,11 +9,11 @@ export interface MatchResult {
   signals: string[];
 }
 
-/** Two tokens count as the same word when one is a prefix of the other and both are 5+ chars (electric/electrical, plumbing/plumber). */
+/** Two tokens count as the same word when both are 5+ chars and share their first five letters (electric/electrical, plumbing/plumbers). */
 function sameToken(x: string, y: string): boolean {
   if (x === y) return true;
   if (x.length < 5 || y.length < 5) return false;
-  return x.startsWith(y) || y.startsWith(x);
+  return x.slice(0, 5) === y.slice(0, 5);
 }
 
 /** Token-set similarity (Jaccard on token sets, plus containment bonus), tolerant of word-form variants. */
