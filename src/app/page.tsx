@@ -1,6 +1,11 @@
 import { IntakeForm } from "@/components/IntakeForm";
 import { DIRECTORIES } from "@/lib/directories/registry";
 
+const ACTIVE = DIRECTORIES.filter((d) => d.active);
+const CORE = ACTIVE.filter((d) => !d.sellable);
+const HANDLED = ACTIVE.filter((d) => d.sellable);
+const TIER_LABEL: Record<string, string> = { aggregator: "Data aggregators", general: "General directories", industry: "Industry directories", local: "Local directories" };
+
 export default function Home() {
   return (
     <div className="grid gap-12">
@@ -11,7 +16,7 @@ export default function Home() {
             Find out where your business is missing or wrong online. Fix it once.
           </h1>
           <p className="text-lg text-muted">
-            We check {DIRECTORIES.length} of the directories customers and search engines actually use, show you
+            We check {ACTIVE.length} of the directories customers and search engines actually use, show you
             exactly what we found, and offer a one-time fix. Every listing we create is a real citation for your
             business, and most link back to your website. No subscription. No sales call.
           </p>
@@ -41,12 +46,39 @@ export default function Home() {
         </ol>
       </section>
 
-      <section className="grid gap-3">
-        <h2 className="text-2xl font-semibold">Directories we check</h2>
-        <div className="flex flex-wrap gap-2">
-          {DIRECTORIES.map((d) => (
-            <span key={d.id} className="rounded-full border border-border bg-card px-3 py-1 text-sm">{d.name}</span>
-          ))}
+      <section id="directories" className="grid gap-6">
+        <div>
+          <h2 className="text-2xl font-semibold">Every directory we check</h2>
+          <p className="text-muted">{ACTIVE.length} today, growing every month. Your report covers all of them.</p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="card p-6 grid gap-3">
+            <div>
+              <h3 className="font-semibold">Core profiles: checked free, fixed by you</h3>
+              <p className="text-sm text-muted">Only the owner can claim these. We tell you whether each one is accurate, wrong or missing, and exactly what to do.</p>
+            </div>
+            <ul className="flex flex-wrap gap-2">
+              {CORE.map((d) => <li key={d.id} className="rounded-full border border-border bg-background px-3 py-1 text-sm">{d.name}</li>)}
+            </ul>
+          </div>
+          <div className="card p-6 grid gap-3">
+            <div>
+              <h3 className="font-semibold">Directories we create and correct for you</h3>
+              <p className="text-sm text-muted">Included in a one-time package. Every listing is verified live or refunded.</p>
+            </div>
+            {(["aggregator", "general", "industry", "local"] as const).map((tier) => {
+              const list = HANDLED.filter((d) => d.tier === tier);
+              if (!list.length) return null;
+              return (
+                <div key={tier} className="grid gap-1">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-muted">{TIER_LABEL[tier]}</div>
+                  <ul className="flex flex-wrap gap-2">
+                    {list.map((d) => <li key={d.id} className="rounded-full border border-border bg-background px-3 py-1 text-sm">{d.name}</li>)}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
     </div>
