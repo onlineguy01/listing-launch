@@ -55,18 +55,34 @@ export class SearchFetchAdapter implements DirectoryAdapter {
     const seen = new Set<string>();
     const candidates: string[] = [];
     let searched = false;
+    let totalHits = 0;
     for (const q of queries) {
       try {
         const hits = await ctx.search(q);
         searched = true;
+        totalHits += hits.length;
         for (const h of hits) {
           const u = canonicalUrl(h.url);
           if (this.isListingUrl(u) && !seen.has(u)) { seen.add(u); candidates.push(u); }
         }
+        // A full page of results with nothing on-site means the provider is ignoring `site:`;
+        // further queries cost money and cannot help.
+        if (hits.length >= 8 && candidates.length === 0) break;
       } catch (e) {
         ctx.log("search_error", { directory: this.def.id, q, error: String(e) });
       }
       if (candidates.length >= 5) break;
+    }
+
+    // Sanity: a `site:` query must return pages on that site. If the provider returned
+    // results but none on-domain, the provider is degraded (redirect-wrapped URLs, ignored
+    // operator). Report unable_to_verify rather than a false "not found".
+    if (searched && candidates.length === 0 && totalHits > 0) {
+      ctx.log("search_offsite_only", { directory: this.def.id, totalHits });
+      return {
+        directoryId: this.def.id, state: "unable_to_verify", confidence: 0, diffs: [],
+        evidence: { queries, candidates: [], source: "none", notes: "Search provider returned no on-site results; cannot confirm absence" },
+      };
     }
 
     let best: { url: string; match: MatchResult; obs: ObservedListing; source: "jsonld" | "html" | "llm" } | null = null;

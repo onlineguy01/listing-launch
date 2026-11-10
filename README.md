@@ -82,7 +82,18 @@ src/
 supabase/migrations/        Postgres schema with RLS
 ```
 
-### Finding states
+### How discovery works, per directory
+
+| Method | Directories | Notes |
+|---|---|---|
+| Directory's own search page (`site_search`) | Yellow Pages, Superpages, MerchantCircle, BBB | Free, reliable. YP and Superpages embed JSON-LD per result; MerchantCircle listing pages carry microdata; BBB result cards are parsed (profiles sit behind a bot wall). |
+| Licensed listings database (`listings_db`) | Google Business Profile | DataForSEO Business Listings (Google Maps data), about 1¢ per lookup. Places API is used instead when `GOOGLE_PLACES_API_KEY` is set. |
+| Official API (`api`) | Yelp (Fusion), Foursquare, Bing | Need keys; fall back to web search without them. |
+| Web search + fetch (`search_fetch`) | Facebook, LinkedIn, Nextdoor, Apple Maps, Angi, Houzz, Manta | Depends on the SERP provider honoring `site:`. When results come back off-site (seen with Google in Nov 2026), the finding is `unable_to_verify`, never a false `not_found`. |
+
+Yelp, Manta, Angi, LinkedIn and Facebook block server-side page fetches, so they need API access or an owner-assisted check.
+
+## Finding states
 
 | State | Meaning | Quoted? |
 |---|---|---|

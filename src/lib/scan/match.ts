@@ -54,8 +54,10 @@ export function matchListing(biz: CanonicalBusiness, obs: ObservedListing): Matc
 
   // Corroboration bumps
   if (identity >= 0.7 && (phoneMatch || domainMatch) && nameSim >= 0.6) identity = Math.min(1, identity + 0.05);
-  // Contradiction: phone present on both sides but different lowers confidence
-  if (bizPhone && obsPhone && !phoneMatch && !domainMatch) identity = Math.min(identity, 0.6);
+  // Contradiction: a different phone lowers confidence, unless name + street pin the identity
+  // (that is the classic "listing has an old phone number" correction we want to sell).
+  const pinnedByAddress = nameSim >= 0.8 && streetMatch;
+  if (bizPhone && obsPhone && !phoneMatch && !domainMatch && !pinnedByAddress) identity = Math.min(identity, 0.6);
 
   // Field diffs (only meaningful if identity accepted)
   const diffs: FieldDiff[] = [];

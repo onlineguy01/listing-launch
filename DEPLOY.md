@@ -40,6 +40,15 @@ Verify your sending domain, create an API key, set `RESEND_API_KEY` and `EMAIL_F
   `https://<your-domain>/api/google/callback` as a redirect URI, request access to the Business Profile APIs
   (Google requires an application and approval), then set `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET`.
 
+## 5b. DataForSEO
+
+Set `SERP_PROVIDER=dataforseo`, `DATAFORSEO_LOGIN`, `DATAFORSEO_PASSWORD`. Two products are used:
+Business Listings (Google discovery, ~$0.014/lookup) and Google SERP (fallback discovery, ~$0.002/query).
+A full 15-directory scan currently costs roughly $0.03 to $0.05 in API fees.
+Rotate the API password if it has ever been pasted into a chat or ticket.
+
+Local note: Node's built-in `fetch` ignores `HTTPS_PROXY`. Behind a corporate or sandbox proxy run with `NODE_USE_ENV_PROXY=1`.
+
 ## 6. Yelp (optional)
 
 Create a Fusion API key and set `YELP_API_KEY` for exact phone-based discovery.

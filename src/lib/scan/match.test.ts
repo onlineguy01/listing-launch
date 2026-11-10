@@ -113,3 +113,16 @@ describe("BusinessInput hideAddress coercion", () => {
     expect(BusinessInput.parse({ ...base, hideAddress: true }).hideAddress).toBe(true);
   });
 });
+
+describe("wrong-phone correction case", () => {
+  it("exact name + exact street with a different phone is identified and the phone diffed", () => {
+    const m = matchListing(biz, { url: "u", name: "Lone Star Plumbing", street: "4521 North Beltline Road Suite 200", city: "Irving", phone: "(972) 555-0199" });
+    expect(m.identity).toBeGreaterThanOrEqual(0.8);
+    expect(classify(m, true).state).toBe("incorrect");
+    expect(m.diffs.map((d) => d.field)).toEqual(["phone"]);
+  });
+  it("same name, different phone, different street stays a possible match", () => {
+    const m = matchListing(biz, { url: "u", name: "Lone Star Plumbing", street: "99 Other St", city: "Irving", phone: "(972) 555-0199" });
+    expect(classify(m, true).state).toBe("possible_match");
+  });
+});

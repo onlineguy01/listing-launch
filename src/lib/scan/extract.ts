@@ -37,17 +37,48 @@ export function extractJsonLd(html: string, url: string): ObservedListing | null
   return null;
 }
 
-/** Cheap HTML heuristics for pages without JSON-LD: tel: links, og:title, address tags. */
+/**
+ * Every LocalBusiness-like node on a page, in document order. Search result
+ * pages (Yellow Pages, Superpages) embed one node per result, sometimes
+ * wrapped in an ItemList. Each node's own `url` wins over the page URL.
+ */
+export function extractJsonLdAll(html: string, pageUrl: string): ObservedListing[] {
+  const $ = cheerio.load(html);
+  const blocks: unknown[] = [];
+  $('script[type="application/ld+json"]').each((_, el) => {
+    try { blocks.push(JSON.parse($(el).contents().text())); } catch { /* ignore */ }
+  });
+  const out: ObservedListing[] = [];
+  for (const node of flatten(blocks)) {
+    if (!isBusinessNode(node)) continue;
+    const addr = pickAddress(node);
+    const own = str(node.url) ?? str(node["@id"]);
+    const url = own && /^https?:\/\//.test(own) ? own : own ? new URL(own, pageUrl).toString() : pageUrl;
+    out.push({
+      url, name: str(node.name), phone: str(node.telephone),
+      website: str(node.sameAs?.[0]),
+      street: addr?.streetAddress, city: addr?.addressLocality, state: addr?.addressRegion, postalCode: addr?.postalCode,
+    });
+  }
+  return out;
+}
+
+/** Cheap HTML heuristics for pages without JSON-LD: schema.org microdata, tel: links, og:title, address tags. */
 export function extractHeuristic(html: string, url: string): ObservedListing | null {
   const $ = cheerio.load(html);
-  const tel = $('a[href^="tel:"]').first().attr("href")?.replace(/^tel:/, "");
+  const prop = (p: string) => $(`[itemprop="${p}"]`).first().text().replace(/\s+/g, " ").trim() || undefined;
+  const tel = prop("telephone") ?? $('a[href^="tel:"]').first().attr("href")?.replace(/^tel:/, "");
   const name =
+    prop("name") ??
     $('meta[property="og:title"]').attr("content") ??
     $("h1").first().text().trim() ??
     $("title").text().trim();
-  const address = $("address").first().text().replace(/\s+/g, " ").trim();
+  const street = prop("streetAddress") ?? ($("address").first().text().replace(/\s+/g, " ").trim() || undefined);
+  const city = prop("addressLocality")?.replace(/,$/, "");
+  const state = prop("addressRegion");
+  const postalCode = prop("postalCode");
   if (!tel && !name) return null;
-  return { url, name: name || undefined, phone: tel, street: address || undefined };
+  return { url, name: name || undefined, phone: tel, street, city, state, postalCode };
 }
 
 // ---------- helpers ----------

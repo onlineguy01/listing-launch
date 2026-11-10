@@ -1,6 +1,6 @@
 // Core domain types shared by the scan engine, adapters, UI and database layer.
 
-export type DiscoveryMethod = "api" | "search_fetch" | "none";
+export type DiscoveryMethod = "api" | "site_search" | "listings_db" | "search_fetch" | "none";
 export type SubmissionMethod = "api" | "form" | "manual" | "none";
 
 export type FindingState =
