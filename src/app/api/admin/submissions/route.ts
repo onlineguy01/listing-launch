@@ -8,6 +8,7 @@ const Body = z.object({
   status: z.enum(["prepared", "submitted", "verification_required", "published", "rejected", "failed"]),
   listingUrl: z.string().url().optional().or(z.literal("")),
   ownerInstructions: z.string().max(1000).optional().or(z.literal("")),
+  minutes: z.number().int().min(0).max(600).optional(),
 });
 
 /** Days after publication at which we re-verify the listing is still live and accurate. */
@@ -17,12 +18,12 @@ export const RECHECK_DAYS = [3, 14, 30];
 export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad input" }, { status: 400 });
-  const { id, status, listingUrl, ownerInstructions } = parsed.data;
+  const { id, status, listingUrl, ownerInstructions, minutes } = parsed.data;
   const store = getStore();
   const before = await store.getSubmission(id);
   if (!before) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  await store.updateSubmission(id, { status, listingUrl: listingUrl || undefined }, `status → ${status}`);
+  await store.updateSubmission(id, { status, listingUrl: listingUrl || undefined }, `status → ${status}${minutes ? ` (+${minutes} min)` : ""}`, minutes ?? 0);
   const sub = { ...before, status, listingUrl: listingUrl || before.listingUrl };
 
   if (status === "verification_required" && before.status !== "verification_required") {

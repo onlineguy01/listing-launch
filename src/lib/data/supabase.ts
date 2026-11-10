@@ -85,7 +85,7 @@ export class SupabaseStore implements Store {
     }).eq("id", id);
   }
 
-  async createSubmissions(subs: Omit<SubmissionRecord, "id" | "updatedAt" | "log">[]) {
+  async createSubmissions(subs: Omit<SubmissionRecord, "id" | "updatedAt" | "log" | "humanMinutes">[]) {
     if (!subs.length) return [];
     // Need order_item ids: look them up by (order, directory)
     const orderId = subs[0].orderId;
@@ -148,10 +148,11 @@ export class SupabaseStore implements Store {
     const { data } = await this.sb.from("submission_jobs").select("*, order_items(order_id, action)").order("updated_at", { ascending: false }).limit(500);
     return (data ?? []).map(rowToSub);
   }
-  async updateSubmission(id: string, patch: Partial<SubmissionRecord>, logEvent?: string) {
-    const { data: cur } = await this.sb.from("submission_jobs").select("log").eq("id", id).single();
+  async updateSubmission(id: string, patch: Partial<SubmissionRecord>, logEvent?: string, addMinutes = 0) {
+    const { data: cur } = await this.sb.from("submission_jobs").select("log, human_minutes").eq("id", id).single();
     const log = logEvent ? [...(cur?.log ?? []), { at: new Date().toISOString(), event: logEvent }] : undefined;
-    await this.sb.from("submission_jobs").update({ status: patch.status, listing_url: patch.listingUrl, method: patch.method, log }).eq("id", id);
+    const human_minutes = addMinutes ? (cur?.human_minutes ?? 0) + addMinutes : undefined;
+    await this.sb.from("submission_jobs").update({ status: patch.status, listing_url: patch.listingUrl, method: patch.method, log, human_minutes }).eq("id", id);
   }
 }
 
@@ -205,6 +206,6 @@ function rowToSub(r: any): SubmissionRecord {
   return {
     id: r.id, orderId: r.order_items?.order_id, businessId: r.business_id, directoryId: r.directory_id,
     action: r.order_items?.action ?? "create", status: r.status, method: r.method, listingUrl: r.listing_url ?? undefined,
-    updatedAt: r.updated_at, log: r.log ?? [],
+    humanMinutes: r.human_minutes ?? 0, updatedAt: r.updated_at, log: r.log ?? [],
   };
 }

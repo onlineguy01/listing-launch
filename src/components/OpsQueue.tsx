@@ -20,10 +20,11 @@ export function OpsQueue({ rows }: { rows: Row[] }) {
 
   const [notice, setNotice] = useState<string | null>(null);
 
-  async function update(id: string, status: string, listingUrl?: string, ownerInstructions?: string) {
-    const r = await fetch("/api/admin/submissions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status, listingUrl, ownerInstructions }) });
+  async function update(id: string, status: string, listingUrl?: string, ownerInstructions?: string, minutes = 0) {
+    const r = await fetch("/api/admin/submissions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status, listingUrl, ownerInstructions, minutes }) });
     if (r.ok) {
       const j = await r.json();
+      setState((s) => s.map((x) => (x.sub.id === id ? { ...x, sub: { ...x.sub, humanMinutes: x.sub.humanMinutes + minutes } } : x)));
       setNotice(status === "verification_required" ? "Saved. Owner emailed with instructions." : status === "published" ? "Saved. Re-checks scheduled at 3, 14 and 30 days." : j.completionSent ? "Saved. Order complete, completion report emailed." : "Saved.");
     }
     if (r.ok) setState((s) => s.map((x) => (x.sub.id === id ? { ...x, sub: { ...x.sub, status: status as SubmissionRecord["status"], listingUrl: listingUrl || x.sub.listingUrl } } : x)));
@@ -67,7 +68,7 @@ export function OpsQueue({ rows }: { rows: Row[] }) {
             </div>
             <form
               className="grid gap-2 text-sm"
-              onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); update(sub.id, String(fd.get("status")), String(fd.get("listingUrl") || ""), String(fd.get("ownerInstructions") || "")); }}
+              onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); update(sub.id, String(fd.get("status")), String(fd.get("listingUrl") || ""), String(fd.get("ownerInstructions") || ""), Number(fd.get("minutes") || 0)); (e.target as HTMLFormElement).minutes.value = ""; }}
             >
               <label className="label">Set status</label>
               <select name="status" className="input" defaultValue={sub.status}>
@@ -75,6 +76,8 @@ export function OpsQueue({ rows }: { rows: Row[] }) {
               </select>
               <label className="label">Listing URL (once published)</label>
               <input name="listingUrl" className="input" defaultValue={sub.listingUrl ?? ""} placeholder="https://…" />
+              <label className="label">Minutes you spent on this step (adds to {sub.humanMinutes} logged)</label>
+              <input name="minutes" className="input" type="number" min={0} max={600} placeholder="e.g. 8" />
               <label className="label">Instructions for the owner (sent when status is “verification_required”)</label>
               <textarea name="ownerInstructions" className="input" rows={2} placeholder="Yelp emailed a confirmation link to your business address; click it within 48 hours." />
               <button className="btn btn-primary">Save</button>

@@ -48,6 +48,7 @@ export interface SubmissionRecord {
   status: "prepared" | "submitted" | "verification_required" | "published" | "rejected" | "not_eligible" | "failed";
   method: "api" | "form" | "manual" | "none";
   listingUrl?: string;
+  humanMinutes: number;
   updatedAt: string;
   log: { at: string; event: string; detail?: string }[];
 }
@@ -68,11 +69,12 @@ export interface Store {
   getOrderByCheckoutSession(sessionId: string): Promise<OrderRecord | null>;
   updateOrder(id: string, patch: Partial<OrderRecord>): Promise<void>;
 
-  createSubmissions(subs: Omit<SubmissionRecord, "id" | "updatedAt" | "log">[]): Promise<SubmissionRecord[]>;
+  createSubmissions(subs: Omit<SubmissionRecord, "id" | "updatedAt" | "log" | "humanMinutes">[]): Promise<SubmissionRecord[]>;
   listSubmissions(filter: { orderId?: string; businessId?: string }): Promise<SubmissionRecord[]>;
   listAllSubmissions(): Promise<SubmissionRecord[]>;
   getSubmission(id: string): Promise<SubmissionRecord | null>;
-  updateSubmission(id: string, patch: Partial<SubmissionRecord>, logEvent?: string): Promise<void>;
+  /** `addMinutes` increments the human-minutes counter (never replaces it). */
+  updateSubmission(id: string, patch: Partial<SubmissionRecord>, logEvent?: string, addMinutes?: number): Promise<void>;
 
   /** Customer account views. */
   listOrdersByEmail(email: string): Promise<OrderRecord[]>;

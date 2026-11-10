@@ -68,10 +68,10 @@ export class MemoryStore implements Store {
     if (cur) mem.orders.set(id, { ...cur, ...patch });
   }
 
-  async createSubmissions(subs: Omit<SubmissionRecord, "id" | "updatedAt" | "log">[]) {
+  async createSubmissions(subs: Omit<SubmissionRecord, "id" | "updatedAt" | "log" | "humanMinutes">[]) {
     const out: SubmissionRecord[] = [];
     for (const s of subs) {
-      const rec: SubmissionRecord = { ...s, id: randomUUID(), updatedAt: new Date().toISOString(), log: [{ at: new Date().toISOString(), event: "prepared" }] };
+      const rec: SubmissionRecord = { ...s, id: randomUUID(), humanMinutes: 0, updatedAt: new Date().toISOString(), log: [{ at: new Date().toISOString(), event: "prepared" }] };
       mem.submissions.set(rec.id, rec);
       out.push(rec);
     }
@@ -118,10 +118,10 @@ export class MemoryStore implements Store {
     if (c) mem.checks.set(id, { ...c, checkedAt: new Date().toISOString(), result, listingUrl });
   }
   async listAllSubmissions() { return [...mem.submissions.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)); }
-  async updateSubmission(id: string, patch: Partial<SubmissionRecord>, logEvent?: string) {
+  async updateSubmission(id: string, patch: Partial<SubmissionRecord>, logEvent?: string, addMinutes = 0) {
     const cur = mem.submissions.get(id);
     if (!cur) return;
     const log = logEvent ? [...cur.log, { at: new Date().toISOString(), event: logEvent }] : cur.log;
-    mem.submissions.set(id, { ...cur, ...patch, log, updatedAt: new Date().toISOString() });
+    mem.submissions.set(id, { ...cur, ...patch, humanMinutes: cur.humanMinutes + addMinutes, log, updatedAt: new Date().toISOString() });
   }
 }

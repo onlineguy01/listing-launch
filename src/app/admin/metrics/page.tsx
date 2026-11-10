@@ -23,7 +23,7 @@ export default async function MetricsPage() {
   const byDir = subs.reduce<Record<string, { total: number; published: number }>>((m, s) => {
     const d = (m[s.directoryId] ??= { total: 0, published: 0 }); d.total++; if (s.status === "published") d.published++; return m;
   }, {});
-  const humanMinutes = subs.reduce((a, s) => a + (("humanMinutes" in s ? (s as { humanMinutes?: number }).humanMinutes : 0) ?? 0), 0);
+  const humanMinutes = subs.reduce((a, s) => a + s.humanMinutes, 0);
 
   const Tile = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
     <div className="card p-4"><div className="text-2xl font-bold">{value}</div><div className="text-xs text-muted">{label}</div>{sub && <div className="text-xs text-muted mt-1">{sub}</div>}</div>
