@@ -33,7 +33,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const jar = await cookies();
   const unlocked = !!biz.ownerEmail || !!jar.get("ll_email")?.value || process.env.REPORT_GATE === "off";
 
-  const packs = assemblePacks(biz, findings);
+  const nicheSites = biz.niche ? await store.listNicheSites(biz.niche.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim()) : [];
+  const packs = assemblePacks(biz, findings, nicheSites);
   const packages = buildPackages(findings);
 
   return (
@@ -68,6 +69,17 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         </div>
         <PackTable rows={packs.industry} emptyText="No industry-specific sites for this category yet. The core pack still applies." />
       </section>
+
+      {/* Niche pack */}
+      {(packs.niche || packs.nicheRows.length > 0) && (
+        <section className="grid gap-3">
+          <div>
+            <h2 className="text-xl font-semibold">Niche pack{packs.niche ? `: ${packs.niche}` : ""}</h2>
+            <p className="text-sm text-muted">Sites specific to your niche, found by research and checked to be real and reachable. “Suggested” rows are awaiting our review; approved rows are ready. Our team submits the “by hand” ones after you order.</p>
+          </div>
+          <PackTable rows={packs.nicheRows} emptyText="We are researching directories for this niche now. They appear here within a few minutes; we also email you when they are ready." />
+        </section>
+      )}
 
       {/* Local pack */}
       <section className="grid gap-3">

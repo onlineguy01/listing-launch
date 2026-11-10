@@ -1,4 +1,4 @@
-import type { CanonicalBusiness, Finding } from "@/lib/domain/types";
+import type { CanonicalBusiness, Finding, NicheSite } from "@/lib/domain/types";
 import type { Quote } from "@/lib/scan/quote";
 
 export type ScanStatus = "queued" | "running" | "complete" | "failed";
@@ -98,6 +98,12 @@ export interface Store {
 
   /** Most recent complete scan for this phone number newer than `since`, for caching. */
   findRecentScanByPhone(phoneE164: string, since: Date): Promise<ScanRecord | null>;
+
+  /** Niche directory discovery. */
+  listNicheSites(niche: string, status?: NicheSite["status"]): Promise<NicheSite[]>;
+  listNiches(): Promise<{ niche: string; suggested: number; approved: number; rejected: number }[]>;
+  upsertNicheSites(sites: Omit<NicheSite, "id" | "createdAt">[]): Promise<NicheSite[]>;
+  updateNicheSite(id: string, patch: Partial<Pick<NicheSite, "status" | "who" | "kind" | "note" | "url">>): Promise<void>;
 
   schedulePublicationChecks(submissionId: string, dates: Date[]): Promise<void>;
   listDuePublicationChecks(now: Date): Promise<PublicationCheck[]>;

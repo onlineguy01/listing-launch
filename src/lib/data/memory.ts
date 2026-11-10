@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { CanonicalBusiness, Finding } from "@/lib/domain/types";
+import type { CanonicalBusiness, Finding, NicheSite } from "@/lib/domain/types";
 import type { OrderRecord, PublicationCheck, ScanRecord, Store, SubmissionRecord } from "./store";
 
 /**
@@ -13,10 +13,11 @@ interface Mem {
   orders: Map<string, OrderRecord>;
   submissions: Map<string, SubmissionRecord>;
   checks: Map<string, PublicationCheck>;
+  nicheSites: Map<string, NicheSite>;
 }
 const g = globalThis as unknown as { __llMem?: Mem };
 const mem: Mem = (g.__llMem ??= {
-  businesses: new Map(), scans: new Map(), findings: new Map(), orders: new Map(), submissions: new Map(), checks: new Map(),
+  businesses: new Map(), scans: new Map(), findings: new Map(), orders: new Map(), submissions: new Map(), checks: new Map(), nicheSites: new Map(),
 });
 
 export class MemoryStore implements Store {
@@ -103,6 +104,27 @@ export class MemoryStore implements Store {
       if (!best || sc.createdAt > best.createdAt) best = sc;
     }
     return best;
+  }
+  async listNicheSites(niche: string, status?: NicheSite["status"]) {
+    return [...mem.nicheSites.values()].filter((s) => s.niche === niche && (!status || s.status === status));
+  }
+  async listNiches() {
+    const m = new Map<string, { niche: string; suggested: number; approved: number; rejected: number }>();
+    for (const s of mem.nicheSites.values()) { const r = m.get(s.niche) ?? { niche: s.niche, suggested: 0, approved: 0, rejected: 0 }; r[s.status]++; m.set(s.niche, r); }
+    return [...m.values()];
+  }
+  async upsertNicheSites(sites: Omit<NicheSite, "id" | "createdAt">[]) {
+    const out: NicheSite[] = [];
+    for (const s of sites) {
+      const existing = [...mem.nicheSites.values()].find((x) => x.niche === s.niche && x.host === s.host);
+      if (existing) { out.push(existing); continue; }
+      const rec: NicheSite = { ...s, id: randomUUID(), createdAt: new Date().toISOString() };
+      mem.nicheSites.set(rec.id, rec); out.push(rec);
+    }
+    return out;
+  }
+  async updateNicheSite(id: string, patch: Partial<Pick<NicheSite, "status" | "who" | "kind" | "note" | "url">>) {
+    const cur = mem.nicheSites.get(id); if (cur) mem.nicheSites.set(id, { ...cur, ...patch });
   }
   async schedulePublicationChecks(submissionId: string, dates: Date[]) {
     for (const d of dates) {

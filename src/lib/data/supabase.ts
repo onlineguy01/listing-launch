@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { CanonicalBusiness, Finding } from "@/lib/domain/types";
+import type { CanonicalBusiness, Finding, NicheSite } from "@/lib/domain/types";
 import type { OrderRecord, PublicationCheck, ScanRecord, Store, SubmissionRecord } from "./store";
 
 /**
@@ -135,6 +135,29 @@ export class SupabaseStore implements Store {
       .order("created_at", { ascending: false }).limit(1).maybeSingle();
     return data ? rowToScan(data) : null;
   }
+  async listNicheSites(niche: string, status?: NicheSite["status"]) {
+    let q = this.sb.from("niche_sites").select().eq("niche", niche);
+    if (status) q = q.eq("status", status);
+    const { data } = await q.order("created_at");
+    return (data ?? []).map(rowToNiche);
+  }
+  async listNiches() {
+    const { data } = await this.sb.from("niche_sites").select("niche, status").limit(5000);
+    const m = new Map<string, { niche: string; suggested: number; approved: number; rejected: number }>();
+    for (const r of data ?? []) { const x = m.get(r.niche) ?? { niche: r.niche, suggested: 0, approved: 0, rejected: 0 }; x[r.status as NicheSite["status"]]++; m.set(r.niche, x); }
+    return [...m.values()];
+  }
+  async upsertNicheSites(sites: Omit<NicheSite, "id" | "createdAt">[]) {
+    if (!sites.length) return [];
+    const { data, error } = await this.sb.from("niche_sites").upsert(sites.map((s) => ({
+      niche: s.niche, name: s.name, host: s.host, url: s.url, kind: s.kind, who: s.who, note: s.note, status: s.status, probe: s.probe, source: s.source,
+    })), { onConflict: "niche,host", ignoreDuplicates: true }).select();
+    if (error) throw error;
+    return (data ?? []).map(rowToNiche);
+  }
+  async updateNicheSite(id: string, patch: Partial<Pick<NicheSite, "status" | "who" | "kind" | "note" | "url">>) {
+    await this.sb.from("niche_sites").update(patch).eq("id", id);
+  }
   async schedulePublicationChecks(submissionId: string, dates: Date[]) {
     await this.sb.from("publication_checks").insert(dates.map((d) => ({ submission_job_id: submissionId, scheduled_for: d.toISOString() })));
   }
@@ -171,7 +194,7 @@ function bizToRow(b: Partial<CanonicalBusiness>): Record<string, any> {
     ["ownerEmail", "owner_email"], ["descriptionShort", "description_short"], ["descriptionLong", "description_long"], ["logoUrl", "logo_url"],
     ["serviceArea", "service_area"], ["services", "services"], ["yearFounded", "year_founded"], ["paymentMethods", "payment_methods"],
     ["googleRefreshTokenEnc", "google_refresh_token_enc"], ["googleAccountEmail", "google_account_email"], ["googleLocationName", "google_location_name"],
-    ["detailsCompletedAt", "details_completed_at"],
+    ["detailsCompletedAt", "details_completed_at"], ["niche", "niche"],
   ];
   for (const [k, col] of map) if (b[k] !== undefined) r[col] = b[k];
   return r;
@@ -186,7 +209,7 @@ function rowToBiz(r: any): CanonicalBusiness {
     serviceArea: r.service_area ?? undefined, services: r.services ?? undefined, yearFounded: r.year_founded ?? undefined,
     paymentMethods: r.payment_methods ?? undefined, googleRefreshTokenEnc: r.google_refresh_token_enc ?? undefined,
     googleAccountEmail: r.google_account_email ?? undefined, googleLocationName: r.google_location_name ?? undefined,
-    detailsCompletedAt: r.details_completed_at ?? undefined,
+    detailsCompletedAt: r.details_completed_at ?? undefined, niche: r.niche ?? undefined,
   };
 }
 function rowToScan(r: any): ScanRecord {
@@ -207,6 +230,9 @@ function rowToOrder(r: any): OrderRecord {
     completionReportSentAt: r.completion_report_sent_at ?? undefined,
     quote: { packageName: r.package_name, items, subtotalCents: r.subtotal_cents, feesCents: r.fees_cents, totalCents: r.total_cents, excluded: [] },
   };
+}
+function rowToNiche(r: any): NicheSite {
+  return { id: r.id, niche: r.niche, name: r.name, host: r.host, url: r.url, kind: r.kind, who: r.who, note: r.note ?? undefined, status: r.status, probe: r.probe ?? undefined, source: r.source, createdAt: r.created_at };
 }
 function rowToSub(r: any): SubmissionRecord {
   return {

@@ -36,6 +36,22 @@ describe("packs", () => {
     expect(packs.local.rows.some((r) => r.name === "Plano Chamber of Commerce")).toBe(false);
   });
 
+  it("labels who does the work and renders niche sites with suggested/approved ordering", () => {
+    const biz: CanonicalBusiness = { id: "b", name: "Ink Haus", city: "Dallas", state: "TX", country: "US", categories: ["beauty"], niche: "tattoo studio", hideAddress: false };
+    const now = new Date().toISOString();
+    const packs = assemblePacks(biz, [f("google", "verified_accurate"), f("yellowpages", "not_found")], [
+      { id: "1", niche: "tattoo studio", name: "Tattoodo", host: "www.tattoodo.com", url: "https://www.tattoodo.com/", kind: "profile", who: "you", status: "suggested", source: "web_search", createdAt: now },
+      { id: "2", niche: "tattoo studio", name: "Alliance of Professional Tattooists", host: "www.safe-tattoos.com", url: "https://www.safe-tattoos.com/", kind: "association", who: "manual", status: "approved", source: "web_search", createdAt: now },
+      { id: "3", niche: "tattoo studio", name: "Junk", host: "junk.example", url: "https://junk.example/", kind: "directory", who: "we", status: "rejected", source: "web_search", createdAt: now },
+    ]);
+    expect(packs.core.find((r) => r.id === "google")?.who).toBe("you");
+    expect(packs.core.find((r) => r.id === "yellowpages")?.who).toBe("we");
+    expect(packs.core.find((r) => r.id === "dataaxle")?.who).toBe("manual");
+    expect(packs.nicheRows.map((r) => r.name)).toEqual(["Alliance of Professional Tattooists", "Tattoodo"]);
+    expect(packs.nicheRows[0].suggested).toBe(false);
+    expect(packs.nicheRows[1].who).toBe("you");
+  });
+
   it("legacy category ids still resolve and non-TX cities get no local pack", () => {
     const biz: CanonicalBusiness = { id: "b", name: "X", city: "Tulsa", state: "OK", country: "US", categories: ["health"], hideAddress: false };
     const packs = assemblePacks(biz, []);

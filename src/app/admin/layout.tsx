@@ -8,6 +8,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <span className="text-xs font-semibold uppercase tracking-wide text-accent">Admin</span>
         <Link href="/admin" className="hover:text-accent">Ops queue</Link>
         <Link href="/admin/metrics" className="hover:text-accent">Metrics</Link>
+        <Link href="/admin/niches" className="hover:text-accent">Niches</Link>
         <Link href="/admin/outbox" className="hover:text-accent">Email outbox</Link>
         <form action="/api/admin/login" method="post" className="ml-auto">
           <button formAction="/api/admin/logout" className="text-xs text-muted hover:text-foreground">Sign out</button>

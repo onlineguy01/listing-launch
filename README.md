@@ -93,6 +93,18 @@ supabase/migrations/        Postgres schema with RLS
 
 Yelp, Manta, Angi, LinkedIn and Facebook block server-side page fetches, so they need API access or an owner-assisted check.
 
+## Website intake and niche discovery
+
+- **Read my site** (`src/lib/intake/website.ts`): the owner enters a URL; we fetch the homepage and contact page,
+  extract name/phone/address from JSON-LD, tel: links and address patterns, and classify the business into one of
+  25 industries plus a free-text niche. With `ANTHROPIC_API_KEY` the classification uses Claude with structured
+  output; without it a keyword classifier runs. Private and local addresses are refused (SSRF guard).
+- **Niche discovery** (`src/lib/niche/discover.ts`): the first time a niche is seen, Claude researches it with web
+  search, the result is structured, every host is probed for reachability, and survivors are stored as
+  `suggested` in `niche_sites`. Ops reviews them at `/admin/niches`, sets kind and who-does-it, and approves.
+  The report shows a Niche pack with approved rows first and suggested rows labeled. Nothing from a niche pack is
+  sold until it is promoted into the registry (`industryPacks.ts` / `registry.ts`).
+
 ## Packs: core, industry, local
 
 Every business gets three packs on its report (`src/lib/pricing/packs.ts`):

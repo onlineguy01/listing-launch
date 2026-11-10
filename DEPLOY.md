@@ -59,6 +59,12 @@ keeps deliverability high and lets owners reply.
   `https://<your-domain>/api/google/callback` as a redirect URI, request access to the Business Profile APIs
   (Google requires an application and approval), then set `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET`.
 
+## 5a. Anthropic
+
+Set `ANTHROPIC_API_KEY` to turn on three things: website classification on intake, AI description drafts, and
+niche directory discovery (web search, about $0.10–0.30 per new niche, cached). Without it the app falls back to
+keyword classification and template descriptions, and the Niche pack stays empty.
+
 ## 5b. DataForSEO
 
 Set `SERP_PROVIDER=dataforseo`, `DATAFORSEO_LOGIN`, `DATAFORSEO_PASSWORD`. Two products are used:

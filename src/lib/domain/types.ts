@@ -40,6 +40,8 @@ export interface CanonicalBusiness {
   website?: string;
   domain?: string;
   categories: string[];
+  /** Free-text niche from website classification, e.g. "tattoo studio", "mobile dog grooming". */
+  niche?: string;
   hours?: Hours;
   hideAddress: boolean;
   googlePlaceId?: string;
@@ -129,4 +131,20 @@ export interface DirectoryDefinition {
 export interface Eligibility {
   eligible: boolean;
   reason?: string;
+}
+
+/** A vertical site discovered for a niche (web-search assisted), validated by a probe, reviewed by ops. */
+export interface NicheSite {
+  id: string;
+  niche: string;            // normalized key, e.g. "tattoo studio"
+  name: string;
+  host: string;
+  url: string;              // homepage or add-listing page
+  kind: "directory" | "marketplace" | "profile" | "association";
+  who: "we" | "you" | "manual";
+  note?: string;
+  status: "suggested" | "approved" | "rejected";
+  probe?: { ok: boolean; status?: number; signals?: string[]; checkedAt: string };
+  source: "web_search" | "ops";
+  createdAt: string;
 }

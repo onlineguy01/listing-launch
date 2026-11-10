@@ -9,6 +9,7 @@ import { createLiveContext, hasLiveKeys } from "./context";
 import { ADAPTERS } from "@/lib/adapters";
 import { CATEGORIES, normalizeCategory } from "@/lib/directories/categories";
 import { emailReportReady } from "@/lib/email/send";
+import { discoverNicheSites } from "@/lib/niche/discover";
 
 export const BusinessInput = z.object({
   name: z.string().trim().min(2).max(120),
@@ -22,6 +23,7 @@ export const BusinessInput = z.object({
   hideAddress: z.preprocess((v) => v === true || v === "true" || v === "on", z.boolean()).default(false),
   email: z.string().trim().email().optional().or(z.literal("")),
   googlePlaceId: z.string().trim().max(200).optional().or(z.literal("")),
+  niche: z.string().trim().max(60).optional().or(z.literal("")),
 });
 export type BusinessInputT = z.infer<typeof BusinessInput>;
 
@@ -42,6 +44,7 @@ export function toCanonical(input: BusinessInputT): Omit<CanonicalBusiness, "id"
     hideAddress: input.hideAddress,
     ownerEmail: input.email || undefined,
     googlePlaceId: input.googlePlaceId || undefined,
+    niche: input.niche || undefined,
   };
 }
 
@@ -108,6 +111,8 @@ export async function executeScan(scanId: string) {
     await store.updateScan(scanId, { status: "complete", completedAt: new Date().toISOString() });
     const to = scan.requesterEmail ?? biz.ownerEmail;
     if (to) await emailReportReady(scanId, to).catch((e) => console.error("report email failed", e));
+    // Niche directory discovery runs once per new niche; results land in admin review.
+    if (biz.niche) discoverNicheSites(biz.niche, normalizeCategory(biz.categories[0] ?? "other")).catch((e) => console.error("niche discovery failed", e));
   } catch (e) {
     await store.updateScan(scanId, { status: "failed", error: String(e) });
   }

@@ -12,6 +12,8 @@ export function IntakeForm() {
   const [placesOn, setPlacesOn] = useState<boolean | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [picked, setPicked] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const tokenRef = useRef<string>(crypto.randomUUID());
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -47,6 +49,22 @@ export function IntakeForm() {
     setPicked(`${d.name}, ${d.city ?? ""} ${d.state ?? ""}`.trim());
   }
 
+  async function analyzeSite() {
+    const f = formRef.current!;
+    const site = (f.elements.namedItem("website") as HTMLInputElement).value.trim();
+    if (!site) { setAnalysis("Enter your website address first."); return; }
+    setAnalyzing(true); setAnalysis(null);
+    const r = await fetch("/api/intake/website", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: site }) });
+    const j = await r.json();
+    if (!r.ok) { setAnalysis(j.error ?? "Could not read that site."); setAnalyzing(false); return; }
+    const set = (name: string, v?: string) => { const el = f.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | null; if (el && v && !(el as HTMLInputElement).value) el.value = v; };
+    set("name", j.name); set("phone", j.phone); set("street", j.street); set("city", j.city); set("state", j.state); set("postalCode", j.postalCode);
+    const cat = f.elements.namedItem("category") as HTMLSelectElement; if (cat && j.industry) cat.value = j.industry;
+    (f.elements.namedItem("niche") as HTMLInputElement).value = j.niche ?? "";
+    setAnalysis(`We read your site: ${j.niche ?? j.industry}${j.name ? ` · ${j.name}` : ""}. Check the details below and fix anything that is wrong.`);
+    setAnalyzing(false);
+  }
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
@@ -67,6 +85,15 @@ export function IntakeForm() {
   return (
     <form ref={formRef} onSubmit={onSubmit} className="card p-6 grid gap-4" autoComplete="off">
       <input type="hidden" name="googlePlaceId" />
+      <input type="hidden" name="niche" />
+      <div>
+        <label className="label" htmlFor="website">Your website</label>
+        <div className="flex gap-2">
+          <input className="input" id="website" name="website" placeholder="yourbusiness.com" />
+          <button type="button" className="btn btn-ghost whitespace-nowrap" onClick={analyzeSite} disabled={analyzing}>{analyzing ? "Reading…" : "Read my site"}</button>
+        </div>
+        <p className="mt-1 text-xs text-muted">{analysis ?? "We read your site to fill in the details and work out your industry and niche. Any niche works."}</p>
+      </div>
       <div className="relative">
         <label className="label" htmlFor="name">Business name</label>
         <input className="input" id="name" name="name" required placeholder={placesOn ? "Start typing to find your business…" : "Lone Star Plumbing LLC"} onChange={(e) => onNameInput(e.target.value)} />
@@ -83,15 +110,9 @@ export function IntakeForm() {
         )}
         {picked && <p className="mt-1 text-xs text-ok">Filled from Google: {picked}. Check the details below and edit anything that is wrong.</p>}
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="label" htmlFor="phone">Business phone</label>
-          <input className="input" id="phone" name="phone" placeholder="(214) 555-0100" />
-        </div>
-        <div>
-          <label className="label" htmlFor="website">Website</label>
-          <input className="input" id="website" name="website" placeholder="lonestarplumbingtx.com" />
-        </div>
+      <div>
+        <label className="label" htmlFor="phone">Business phone</label>
+        <input className="input" id="phone" name="phone" placeholder="(214) 555-0100" />
       </div>
       <div>
         <label className="label" htmlFor="street">Street address</label>
