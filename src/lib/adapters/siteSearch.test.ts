@@ -106,3 +106,27 @@ describe("SERP sanity in the generic adapter", () => {
     expect(f.evidence.notes).toMatch(/no on-site results/);
   });
 });
+
+describe("DexKnows and Hotfrog (live fixtures, Nov 2026)", () => {
+  const baker: CanonicalBusiness = { id: "b", name: "Baker Brothers Plumbing, Air & Electric", street: "2615 Big Town Blvd", city: "Mesquite", state: "TX", postalCode: "75150", country: "US", phoneE164: "+12143248811", website: "https://www.bakerbrothersplumbing.com", domain: "bakerbrothersplumbing.com", categories: ["home_services"], hideAddress: false };
+
+  it("DexKnows: ranks listing links by slug similarity and reads JSON-LD from the detail page", async () => {
+    const a = new SiteSearchAdapter(getDirectory("dexknows"), site.dexknows);
+    const c = ctx([[/dexknows\.com\/search/, fx("dexknows-search.html")], [/dexknows\.com\/mesquite-tx\/bp\//, fx("dexknows-listing.html")]]);
+    const f = await a.discover(baker, c);
+    expect(f.state).toBe("verified_accurate");
+    expect(f.listingUrl).toMatch(/dexknows\.com\/mesquite-tx\/bp\/baker-brothers-plumbing/);
+    expect(f.observed?.phone).toBe("214-324-8811");
+  });
+
+  it("Hotfrog: follows /company/ links and merges JSON-LD address with the tel: link phone", async () => {
+    const a = new SiteSearchAdapter(getDirectory("hotfrog"), site.hotfrog);
+    const c = ctx([[/hotfrog\.com\/search\//, fx("hotfrog-search.html")], [/hotfrog\.com\/company\//, fx("hotfrog-listing.html")]]);
+    const f = await a.discover(baker, c);
+    expect(c.fetched[0]).toBe("https://www.hotfrog.com/search/mesquite-tx/baker-brothers-plumbing-air-and-electric");
+    expect(f.listingUrl).toMatch(/hotfrog\.com\/company\//);
+    expect(f.observed?.street).toMatch(/2615 Big Town/);
+    expect(f.observed?.phone).toBeDefined(); // came from the tel: link, not JSON-LD
+    expect(["verified_accurate", "incorrect"]).toContain(f.state);
+  });
+});

@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "worker": "tsx --tsconfig tsconfig.scripts.json scripts/worker.ts",
-    "seed:sql": "tsx --tsconfig tsconfig.scripts.json scripts/seed-directories.ts"
+    "seed:sql": "tsx --tsconfig tsconfig.scripts.json scripts/seed-directories.ts",
+    "probe": "tsx --tsconfig tsconfig.scripts.json scripts/probe-directories.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.7.0",

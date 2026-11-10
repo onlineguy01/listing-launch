@@ -18,6 +18,8 @@ const SPECIAL: Record<string, (def: (typeof DIRECTORIES)[number]) => DirectoryAd
   superpages: (def) => new SiteSearchAdapter(def, site.superpages),
   merchantcircle: (def) => new SiteSearchAdapter(def, site.merchantcircle),
   bbb: (def) => new SiteSearchAdapter(def, site.bbb),
+  dexknows: (def) => new SiteSearchAdapter(def, site.dexknows),
+  hotfrog: (def) => new SiteSearchAdapter(def, site.hotfrog),
 };
 
 /** Directories with discovery "none" (aggregators) are submitted and verified downstream, never scanned. */

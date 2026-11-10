@@ -1,7 +1,7 @@
 import type { CanonicalBusiness, DirectoryDefinition, Finding, ObservedListing } from "@/lib/domain/types";
 import type { AdapterContext } from "./types";
 import { SearchFetchAdapter } from "./searchFetchAdapter";
-import { extractHeuristic, extractJsonLd, extractJsonLdAll } from "@/lib/scan/extract";
+import { extractBest, extractJsonLdAll } from "@/lib/scan/extract";
 import { classify, matchListing, nameSimilarity, type MatchResult } from "@/lib/scan/match";
 
 /**
@@ -53,7 +53,7 @@ export class SiteSearchAdapter extends SearchFetchAdapter {
       for (const { u } of ranked) {
         const page = await ctx.fetchHtml(u);
         if (!page) continue;
-        const o = extractJsonLd(page, u) ?? extractHeuristic(page, u);
+        const o = extractBest(page, u);
         if (o) { observed.push({ ...o, url: u }); source = "html"; }
       }
     }

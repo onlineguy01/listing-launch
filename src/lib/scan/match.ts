@@ -9,13 +9,20 @@ export interface MatchResult {
   signals: string[];
 }
 
-/** Token-set similarity (Jaccard on token sets, plus containment bonus). */
+/** Two tokens count as the same word when one is a prefix of the other and both are 5+ chars (electric/electrical, plumbing/plumber). */
+function sameToken(x: string, y: string): boolean {
+  if (x === y) return true;
+  if (x.length < 5 || y.length < 5) return false;
+  return x.startsWith(y) || y.startsWith(x);
+}
+
+/** Token-set similarity (Jaccard on token sets, plus containment bonus), tolerant of word-form variants. */
 export function nameSimilarity(a?: string | null, b?: string | null): number {
   const ta = new Set(nameTokens(a));
   const tb = new Set(nameTokens(b));
   if (!ta.size || !tb.size) return 0;
   let inter = 0;
-  for (const t of ta) if (tb.has(t)) inter++;
+  for (const t of ta) if ([...tb].some((u) => sameToken(t, u))) inter++;
   const jaccard = inter / (ta.size + tb.size - inter);
   const containment = inter / Math.min(ta.size, tb.size);
   return Math.max(jaccard, containment * 0.9);

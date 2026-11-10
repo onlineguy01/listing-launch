@@ -63,6 +63,15 @@ export function extractJsonLdAll(html: string, pageUrl: string): ObservedListing
   return out;
 }
 
+/** JSON-LD first, with microdata/tel: heuristics filling any missing fields (Hotfrog puts the phone only in a tel: link). */
+export function extractBest(html: string, url: string): ObservedListing | null {
+  const ld = extractJsonLd(html, url);
+  const h = extractHeuristic(html, url);
+  if (!ld) return h;
+  if (!h) return ld;
+  return { ...h, ...Object.fromEntries(Object.entries(ld).filter(([, v]) => v !== undefined && v !== "")), url };
+}
+
 /** Cheap HTML heuristics for pages without JSON-LD: schema.org microdata, tel: links, og:title, address tags. */
 export function extractHeuristic(html: string, url: string): ObservedListing | null {
   const $ = cheerio.load(html);

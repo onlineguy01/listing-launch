@@ -5,6 +5,7 @@ import { extractJsonLdAll } from "@/lib/scan/extract";
 
 const q = (s: string) => encodeURIComponent(s).replace(/%20/g, "+");
 const loc = (b: CanonicalBusiness) => `${b.city}, ${b.state}`;
+const slug = (s: string) => s.toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 /** Yellow Pages: results page embeds one LocalBusiness JSON-LD node per result. */
 export const yellowpages: SiteSearchConfig = {
@@ -17,6 +18,22 @@ export const yellowpages: SiteSearchConfig = {
 export const superpages: SiteSearchConfig = {
   searchUrl: (b) => `https://www.superpages.com/search?search_terms=${q(b.name)}&geo_location_terms=${q(loc(b))}`,
   listingLink: /href="(\/[a-z0-9-]+\/bpp\/[a-z0-9-]+)"/i,
+  maxDetailFetches: 3,
+};
+
+/** DexKnows: same engine as Yellow Pages (listing URLs /city-st/bp/slug-id). Detail pages carry JSON-LD. */
+export const dexknows: SiteSearchConfig = {
+  searchUrl: (b) => `https://www.dexknows.com/search?search_terms=${q(b.name)}&geo_location_terms=${q(loc(b))}`,
+  listingLink: /href="(\/[a-z0-9-]+\/bp\/[a-z0-9-]+)"/i,
+  extractResults: () => [], // results page has no per-result JSON-LD
+  maxDetailFetches: 3,
+};
+
+/** Hotfrog: search is a path (/search/city-st/business-name); company pages carry JSON-LD plus a tel: link. */
+export const hotfrog: SiteSearchConfig = {
+  searchUrl: (b) => `https://www.hotfrog.com/search/${slug(`${b.city} ${b.state}`)}/${slug(b.name)}`,
+  listingLink: /href="(\/company\/[A-Za-z0-9_-]+\/[a-z0-9-]+\/[a-z0-9-]+(?:\/[a-z0-9-]+)?)"/i,
+  extractResults: () => [],
   maxDetailFetches: 3,
 };
 

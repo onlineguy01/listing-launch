@@ -37,6 +37,11 @@ describe("nameSimilarity", () => {
   it("distinguishes different businesses", () => {
     expect(nameSimilarity("Lone Star Plumbing", "Lone Star Roofing")).toBeLessThan(0.8);
   });
+  it("treats word-form variants as the same word", () => {
+    expect(nameSimilarity("Baker Brothers Plumbing, Air & Electric", "Baker Brothers Plumbing, Air & Electrical")).toBe(1);
+    expect(nameSimilarity("Metro Plumbing", "Metro Plumbers")).toBe(1);
+    expect(nameSimilarity("Metro Plumbing", "Metro Painting")).toBeLessThan(0.8);
+  });
 });
 
 describe("matchListing", () => {
