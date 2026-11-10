@@ -52,12 +52,12 @@ export default function Home() {
           <p className="text-muted">{ACTIVE.length} today, growing every month. Your report covers all of them.</p>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
-          <div className="card p-6 grid gap-3">
+          <div className="card p-6 grid content-start gap-3">
             <div>
               <h3 className="font-semibold">Core profiles: checked free, fixed by you</h3>
               <p className="text-sm text-muted">Only the owner can claim these. We tell you whether each one is accurate, wrong or missing, and exactly what to do.</p>
             </div>
-            <ul className="flex flex-wrap gap-2">
+            <ul className="flex flex-wrap content-start items-start gap-2">
               {CORE.map((d) => <li key={d.id} className="rounded-full border border-border bg-background px-3 py-1 text-sm">{d.name}</li>)}
             </ul>
           </div>
