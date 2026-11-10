@@ -3,6 +3,7 @@ import { z } from "zod";
 import { MAGIC_TTL_MS, signToken } from "@/lib/security/session";
 import { sendEmail } from "@/lib/email/mailer";
 import { appUrl } from "@/lib/email/send";
+import { SITE_NAME } from "@/lib/config/brand";
 
 const Body = z.object({ email: z.string().email() });
 
@@ -15,9 +16,9 @@ export async function POST(req: Request) {
   const link = `${appUrl()}/auth/verify?token=${encodeURIComponent(token)}`;
   await sendEmail({
     to: email,
-    subject: "Your Listing Launch sign-in link",
+    subject: `Your ${SITE_NAME} sign-in link`,
     text: `Click to sign in (valid 15 minutes): ${link}`,
-    html: `<p>Click to sign in to Listing Launch. The link is valid for 15 minutes.</p><p><a href="${link}" style="background:#0f766e;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:600;display:inline-block">Sign in</a></p><p style="color:#6b7280;font-size:12px">If you did not request this, ignore this email.</p>`,
+    html: `<p>Click to sign in to ${SITE_NAME}. The link is valid for 15 minutes.</p><p><a href="${link}" style="background:#0f766e;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:600;display:inline-block">Sign in</a></p><p style="color:#6b7280;font-size:12px">If you did not request this, ignore this email.</p>`,
   }).catch((e) => console.error("magic link email failed", e));
   return NextResponse.json({ ok: true });
 }

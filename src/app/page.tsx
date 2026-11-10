@@ -12,7 +12,8 @@ export default function Home() {
           </h1>
           <p className="text-lg text-muted">
             We check {DIRECTORIES.length} of the directories customers and search engines actually use, show you
-            exactly what we found, and offer a one-time fix. No subscription. No sales call.
+            exactly what we found, and offer a one-time fix. Every listing we create is a real citation for your
+            business, and most link back to your website. No subscription. No sales call.
           </p>
           <ul className="grid gap-2 text-sm">
             <li className="flex gap-2"><span className="text-ok">✓</span> See accurate, incorrect and missing listings with evidence links</li>

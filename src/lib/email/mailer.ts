@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { SITE_NAME } from "@/lib/config/brand";
 
 export interface Mail { to: string; subject: string; html: string; text: string }
 export interface SentMail extends Mail { id: string; at: string; provider: "resend" | "outbox" }
@@ -6,7 +7,7 @@ export interface SentMail extends Mail { id: string; at: string; provider: "rese
 const g = globalThis as unknown as { __llOutbox?: SentMail[] };
 const outbox: SentMail[] = (g.__llOutbox ??= []);
 
-export const FROM = process.env.EMAIL_FROM ?? "Listing Launch <hello@example.com>";
+export const FROM = process.env.EMAIL_FROM ?? `${SITE_NAME} <hello@localbusinessbacklinks.com>`;
 export const emailEnabled = () => !!process.env.RESEND_API_KEY;
 
 /**

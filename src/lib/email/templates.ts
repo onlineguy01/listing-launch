@@ -3,18 +3,19 @@ import type { OrderRecord, SubmissionRecord } from "@/lib/data/store";
 import { getDirectory } from "@/lib/directories/registry";
 import { formatCents } from "@/lib/scan/quote";
 import type { Mail } from "./mailer";
+import { DISCLAIMER, SITE_NAME } from "@/lib/config/brand";
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
 function layout(title: string, bodyHtml: string): string {
   return `<!doctype html><html><body style="margin:0;background:#f7f7f5;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#16181d">
   <div style="max-width:560px;margin:0 auto;padding:32px 20px">
-    <div style="font-weight:700;margin-bottom:24px"><span style="display:inline-block;width:14px;height:14px;background:#0f766e;border-radius:4px;vertical-align:-1px;margin-right:8px"></span>Listing Launch</div>
+    <div style="font-weight:700;margin-bottom:24px"><span style="display:inline-block;width:14px;height:14px;background:#0f766e;border-radius:4px;vertical-align:-1px;margin-right:8px"></span>${esc(SITE_NAME)}</div>
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px">
       <h1 style="font-size:20px;margin:0 0 12px">${esc(title)}</h1>
       ${bodyHtml}
     </div>
-    <p style="font-size:12px;color:#6b7280;margin-top:16px">We find, create and correct business listings. We do not sell rankings or guaranteed backlinks.</p>
+    <p style="font-size:12px;color:#6b7280;margin-top:16px">${esc(DISCLAIMER)}</p>
   </div></body></html>`;
 }
 

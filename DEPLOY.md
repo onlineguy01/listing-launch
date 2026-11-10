@@ -1,4 +1,4 @@
-# Deploying Listing Launch
+# Deploying Local Business Backlinks
 
 Target stack: Vercel (web + cron) · Supabase (Postgres, storage) · Stripe · Resend · a SERP provider.
 Everything degrades gracefully: any key you leave out keeps that part in demo mode.
@@ -22,6 +22,20 @@ Everything degrades gracefully: any key you leave out keeps that part in demo mo
 4. Protect `/admin` behind Vercel Authentication (Deployment Protection) or put it on a separate internal domain.
    The status API already requires `x-admin-token`; the pages themselves are not auth-gated yet.
 
+## 2b. Custom domain (localbusinessbacklinks.com)
+
+1. Vercel → Project → Settings → Domains → Add `localbusinessbacklinks.com`, then add `www.localbusinessbacklinks.com`
+   and set it to redirect to the apex.
+2. At your domain registrar's DNS panel, add the records Vercel shows. Today those are:
+   - `A` record, host `@`, value `76.76.21.21`
+   - `CNAME` record, host `www`, value `cname.vercel-dns.com`
+   (Alternatively switch the domain's nameservers to Vercel's `ns1.vercel-dns.com` / `ns2.vercel-dns.com`.)
+3. Wait for Vercel to show "Valid Configuration" (minutes to an hour). HTTPS is automatic.
+4. Set `APP_URL=https://localbusinessbacklinks.com` in Vercel env vars and redeploy. Magic links, report emails
+   and Stripe return URLs all use this value.
+5. Update anything that references the old `*.vercel.app` URL: the Stripe webhook endpoint (section 3),
+   the Google OAuth redirect URI (section 5), and `EMAIL_FROM` once the Resend domain is verified (section 4).
+
 ## 3. Stripe
 
 1. Create a webhook endpoint: `https://<your-domain>/api/stripe/webhook`, event `checkout.session.completed`.
@@ -30,7 +44,10 @@ Everything degrades gracefully: any key you leave out keeps that part in demo mo
 
 ## 4. Resend
 
-Verify your sending domain, create an API key, set `RESEND_API_KEY` and `EMAIL_FROM`.
+Add `localbusinessbacklinks.com` as a sending domain in Resend and add the DNS records it gives you (DKIM TXT,
+SPF/MX for the bounce subdomain). Once verified, create an API key and set `RESEND_API_KEY` and
+`EMAIL_FROM="Local Business Backlinks <hello@localbusinessbacklinks.com>"`. Using the same domain as the site
+keeps deliverability high and lets owners reply.
 
 ## 5. Google
 
