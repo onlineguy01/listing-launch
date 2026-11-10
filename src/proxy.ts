@@ -10,7 +10,7 @@ export async function proxy(req: NextRequest) {
   const token = process.env.ADMIN_TOKEN;
   if (!token) return NextResponse.next();
   const path = req.nextUrl.pathname;
-  if (path === "/admin/login" || path === "/api/admin/login") return NextResponse.next();
+  if (path === "/admin/login" || path === "/api/admin/login" || path === "/api/admin/logout") return NextResponse.next();
 
   if (req.headers.get("x-admin-token") === token) return NextResponse.next();
   const ok = await verifyToken(req.cookies.get(ADMIN_COOKIE)?.value, "admin");
