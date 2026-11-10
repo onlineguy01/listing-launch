@@ -83,6 +83,18 @@ export class MemoryStore implements Store {
     );
   }
   async getSubmission(id: string) { return mem.submissions.get(id) ?? null; }
+  async listOrdersByEmail(email: string) {
+    const e = email.toLowerCase();
+    return [...mem.orders.values()].filter((o) => o.customerEmail?.toLowerCase() === e || mem.businesses.get(o.businessId)?.ownerEmail?.toLowerCase() === e)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+  async listScansByEmail(email: string) {
+    const e = email.toLowerCase();
+    return [...mem.scans.values()].filter((s) => s.requesterEmail?.toLowerCase() === e || mem.businesses.get(s.businessId)?.ownerEmail?.toLowerCase() === e)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+  async listAllScans() { return [...mem.scans.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt)); }
+  async listAllOrders() { return [...mem.orders.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt)); }
   async findRecentScanByPhone(phoneE164: string, since: Date) {
     let best: ScanRecord | null = null;
     for (const sc of mem.scans.values()) {

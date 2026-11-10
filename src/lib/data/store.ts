@@ -74,6 +74,13 @@ export interface Store {
   getSubmission(id: string): Promise<SubmissionRecord | null>;
   updateSubmission(id: string, patch: Partial<SubmissionRecord>, logEvent?: string): Promise<void>;
 
+  /** Customer account views. */
+  listOrdersByEmail(email: string): Promise<OrderRecord[]>;
+  listScansByEmail(email: string): Promise<ScanRecord[]>;
+  /** Admin metrics. */
+  listAllScans(): Promise<ScanRecord[]>;
+  listAllOrders(): Promise<OrderRecord[]>;
+
   /** Most recent complete scan for this phone number newer than `since`, for caching. */
   findRecentScanByPhone(phoneE164: string, since: Date): Promise<ScanRecord | null>;
 

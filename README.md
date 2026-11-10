@@ -30,7 +30,10 @@ without charging. Copy `.env.example` to `.env.local` and fill in keys to go liv
 | `RESEND_API_KEY`, `EMAIL_FROM`, `APP_URL` | Real email (report, order confirmation, owner actions, completion report). Without it, emails land in `/admin/outbox` |
 | `DATAFORSEO_LOGIN`/`DATAFORSEO_PASSWORD` + `SERP_PROVIDER=dataforseo` | Alternative search provider using header auth |
 | `CRON_SECRET` | Protects `/api/cron/recheck` (Vercel cron, daily, see `vercel.json`) |
-| `ADMIN_TOKEN` | Protects the ops status API (`x-admin-token` header) |
+| `ADMIN_TOKEN` | Gates `/admin/*` and `/api/admin/*` behind `/admin/login` (or the `x-admin-token` header) |
+| `APP_SECRET` | Signs magic links and session cookies; encrypts connected-account tokens. Set in production |
+| `ANTHROPIC_API_KEY` | AI description drafts from owner-approved facts (template fallback without it) |
+| `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | Owner-authorized Google Business Profile connection |
 | `PLAYWRIGHT_CHROMIUM_PATH` | System Chromium for the submission worker (`npm run worker`) |
 
 ```bash
@@ -49,7 +52,11 @@ src/
     report/[id]             Findings table + recommended package + checkout
     order/[id]              Post-purchase status page
     admin                   Ops queue: task cards, status changes trigger owner emails and re-checks
+    admin/metrics           Pilot scorecard: scans, unlocks, conversion, revenue, publication rate
     admin/outbox            Demo-mode email outbox
+    admin/login             Admin token sign-in (enforced by src/proxy.ts when ADMIN_TOKEN is set)
+    login, account          Customer magic-link sign-in and account (orders, scans)
+    order/[id]/details      Post-purchase details: services, hours, service area, descriptions (AI draft)
     api/scan, api/checkout, api/stripe/webhook, api/admin/submissions
     api/places/*            Server-proxied Google Places autocomplete + details
     api/report/unlock       Email gate for the full report
@@ -123,8 +130,8 @@ adapter never bypasses a CAPTCHA or login wall; it returns `manual_required` and
 
 ## Next up
 
+- Log human minutes per submission in the ops queue so the scorecard can price fulfillment.
 - Real-site form specs for Yellow Pages, Manta, MerchantCircle, Superpages (inspect each site first).
 - Google Business Profile OAuth flow for owner-authorized creation and claims.
 - Post-purchase intake for logo, descriptions, hours and service area.
-- Customer login (Supabase magic link) so owners can see all their orders.
 - Move rate limiting to Upstash Redis before running multiple instances.

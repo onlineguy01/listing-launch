@@ -13,10 +13,8 @@ const Body = z.object({
 /** Days after publication at which we re-verify the listing is still live and accurate. */
 export const RECHECK_DAYS = [3, 14, 30];
 
-/** Ops queue update. Protect with ADMIN_TOKEN in production. */
+/** Ops queue update. Access is enforced by src/proxy.ts (admin cookie or x-admin-token). */
 export async function POST(req: Request) {
-  const token = process.env.ADMIN_TOKEN;
-  if (token && req.headers.get("x-admin-token") !== token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad input" }, { status: 400 });
   const { id, status, listingUrl, ownerInstructions } = parsed.data;

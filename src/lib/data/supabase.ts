@@ -110,6 +110,24 @@ export class SupabaseStore implements Store {
     const { data } = await this.sb.from("submission_jobs").select("*, order_items(order_id, action)").eq("id", id).maybeSingle();
     return data ? rowToSub(data) : null;
   }
+  async listOrdersByEmail(email: string) {
+    const { data } = await this.sb.from("orders").select("*, order_items(*), businesses!inner(owner_email)")
+      .or(`customer_email.ilike.${email},businesses.owner_email.ilike.${email}`).order("created_at", { ascending: false });
+    return (data ?? []).map(rowToOrder);
+  }
+  async listScansByEmail(email: string) {
+    const { data } = await this.sb.from("scan_jobs").select("*, businesses!inner(owner_email)")
+      .or(`requester_email.ilike.${email},businesses.owner_email.ilike.${email}`).order("created_at", { ascending: false });
+    return (data ?? []).map(rowToScan);
+  }
+  async listAllScans() {
+    const { data } = await this.sb.from("scan_jobs").select().order("created_at", { ascending: false }).limit(5000);
+    return (data ?? []).map(rowToScan);
+  }
+  async listAllOrders() {
+    const { data } = await this.sb.from("orders").select("*, order_items(*)").order("created_at", { ascending: false }).limit(5000);
+    return (data ?? []).map(rowToOrder);
+  }
   async findRecentScanByPhone(phoneE164: string, since: Date) {
     const { data } = await this.sb.from("scan_jobs").select("*, businesses!inner(phone_e164)")
       .eq("status", "complete").eq("businesses.phone_e164", phoneE164).gte("created_at", since.toISOString())
