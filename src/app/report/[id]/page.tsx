@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { getStore } from "@/lib/data";
 import { buildPackages, formatCents, GUARANTEE_DAYS, type PackageLine } from "@/lib/pricing/packages";
 import { assemblePacks } from "@/lib/pricing/packs";
+import { normalizeNiche } from "@/lib/niche/discover";
 import { PackTable } from "@/components/PackTable";
 import { STATE_LABEL } from "@/components/StateBadge";
 import { CheckoutButton } from "@/components/CheckoutButton";
@@ -33,7 +34,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const jar = await cookies();
   const unlocked = !!biz.ownerEmail || !!jar.get("ll_email")?.value || process.env.REPORT_GATE === "off";
 
-  const nicheSites = biz.niche ? await store.listNicheSites(biz.niche.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim()) : [];
+  const nicheSites = biz.niche ? await store.listNicheSites(normalizeNiche(biz.niche)) : [];
   const packs = assemblePacks(biz, findings, nicheSites);
   const packages = buildPackages(findings);
 

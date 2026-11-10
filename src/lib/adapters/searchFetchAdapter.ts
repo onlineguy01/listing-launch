@@ -16,6 +16,7 @@ export class SearchFetchAdapter implements DirectoryAdapter {
   eligibility(biz: CanonicalBusiness): Eligibility {
     if (!this.def.active) return { eligible: false, reason: "Directory inactive" };
     if (!this.def.eligibleCountries.includes(biz.country)) return { eligible: false, reason: "Country not supported" };
+    if (!biz.city?.trim()) return { eligible: false, reason: "City needed to check this directory" };
     if (this.def.eligibleCategories && !biz.categories.map(normalizeCategory).some((c) => this.def.eligibleCategories!.includes(c)))
       return { eligible: false, reason: `Only for ${this.def.eligibleCategories.map((c) => CATEGORIES[c as keyof typeof CATEGORIES] ?? c).join("; ")}` };
     if (biz.hideAddress && !this.def.allowsHiddenAddress)

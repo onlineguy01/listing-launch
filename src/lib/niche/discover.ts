@@ -6,8 +6,9 @@ import type { NicheSite } from "@/lib/domain/types";
 import { CATEGORIES, type CategoryId } from "@/lib/directories/categories";
 import { industrySitesFor } from "@/lib/directories/industryPacks";
 import { DIRECTORIES } from "@/lib/directories/registry";
+import { NICHE_ALIASES } from "./seeds";
 
-export const normalizeNiche = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+export const normalizeNiche = (s: string) => { const n = s.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim(); return NICHE_ALIASES[n] ?? n; };
 
 const Suggested = z.object({
   sites: z.array(z.object({

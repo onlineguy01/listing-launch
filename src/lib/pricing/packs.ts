@@ -79,7 +79,7 @@ export function assemblePacks(biz: CanonicalBusiness, findings: Finding[], niche
     return { id: s.id, name: s.name, url: `https://${s.host}/`, kind: s.kind, kindLabel: KIND_LABEL[s.kind], checked: false, sellable: false, ownerManaged, who: ownerManaged ? "you" : "manual", note: s.note };
   });
 
-  const local = localSitesFor(biz.city, biz.state);
+  const local = localSitesFor(biz.city, biz.state, category);
   const localRows: PackRow[] = local.sites.map((s: LocalSite) => {
     const d = byHost.get(s.host.replace(/^www\./, ""));
     if (d && d.active) return { ...rowFromDirectory(d, s.kind, s.kind === "chamber" ? "Chamber" : s.kind === "tourism" ? "Tourism bureau" : "Regional"), name: s.name, note: s.note };

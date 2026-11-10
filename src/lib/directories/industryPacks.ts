@@ -138,6 +138,9 @@ export const INDUSTRY_SITES: IndustrySite[] = [
   d("designrush", "DesignRush", "www.designrush.com", ["b2b_agency"], "Agency directory; free listing."),
   d("goodfirms", "GoodFirms", "www.goodfirms.co", ["b2b_agency", "software_it"], "Agency directory; free listing."),
   p("crunchbase", "Crunchbase", "www.crunchbase.com", ["b2b_agency", "software_it"], "Company profile."),
+  d("sortlist", "Sortlist", "www.sortlist.com", ["b2b_agency"], "Agency directory; free profile."),
+  d("themanifest", "The Manifest", "themanifest.com", ["b2b_agency", "software_it"], "Agency directory (Clutch network); free listing."),
+  d("agencyspotter", "Agency Spotter", "www.agencyspotter.com", ["b2b_agency"], "Agency directory; free profile."),
   // Software and IT
   p("g2", "G2", "www.g2.com", ["software_it"], "Product profile with reviews."),
   p("capterra", "Capterra", "www.capterra.com", ["software_it"], "Product profile; vendor portal."),

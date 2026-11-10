@@ -62,6 +62,7 @@ export class GooglePlacesAdapter extends SearchFetchAdapter {
   }
 
   private async viaListingsDb(biz: CanonicalBusiness, ctx: AdapterContext): Promise<Finding> {
+    if (!biz.city?.trim()) return this.unable([], "city needed to look up the Google listing");
     const title = biz.name.replace(/[%_]/g, " ").trim();
     const filters: unknown[] = [["title", "like", `%${title}%`], "and", ["address_info.city", "=", biz.city]];
     const query = `dataforseo:business_listings title~"${title}" city=${biz.city}`;
