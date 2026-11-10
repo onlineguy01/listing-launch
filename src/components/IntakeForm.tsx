@@ -92,7 +92,7 @@ export function IntakeForm() {
           <input className="input" id="website" name="website" placeholder="yourbusiness.com" />
           <button type="button" className="btn btn-ghost whitespace-nowrap" onClick={analyzeSite} disabled={analyzing}>{analyzing ? "Reading…" : "Read my site"}</button>
         </div>
-        <p className="mt-1 text-xs text-muted">{analysis ?? "We read your site to fill in the details and work out your industry and niche. Any niche works."}</p>
+        <p className="mt-1 text-xs text-muted">{analysis ?? "We&apos;ll read your site to fill in the details and work out your industry and niche. Any niche works."}</p>
       </div>
       <div className="relative">
         <label className="label" htmlFor="name">Business name</label>
