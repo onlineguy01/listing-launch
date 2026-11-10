@@ -121,10 +121,12 @@ function pickAddress(n: JsonLdNode) {
   };
 }
 
+/** Strings from JSON-LD may carry markup (BBB highlights matches with <em>) and entities. */
 function str(v: unknown): string | undefined {
-  if (typeof v === "string") return v.trim() || undefined;
   if (typeof v === "number") return String(v);
-  return undefined;
+  if (typeof v !== "string") return undefined;
+  const clean = v.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, " ").trim();
+  return clean || undefined;
 }
 
 function sameHost(a: string, b: string): boolean {

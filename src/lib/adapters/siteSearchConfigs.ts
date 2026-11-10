@@ -1,6 +1,7 @@
 import type { CanonicalBusiness, ObservedListing } from "@/lib/domain/types";
 import type { SiteSearchConfig } from "./siteSearchAdapter";
 import * as cheerio from "cheerio";
+import { extractJsonLdAll } from "@/lib/scan/extract";
 
 const q = (s: string) => encodeURIComponent(s).replace(/%20/g, "+");
 const loc = (b: CanonicalBusiness) => `${b.city}, ${b.state}`;
@@ -28,14 +29,17 @@ export const merchantcircle: SiteSearchConfig = {
 };
 
 /**
- * BBB: results page lists profile links with the business name as anchor text.
- * Profile pages sit behind a bot challenge, so we match on name + city from the
- * results page only; without a phone this tops out as a "possible match" for review.
+ * BBB serves two renderings of its results page: one with a SearchResultsPage
+ * JSON-LD ItemList (name, address, phone, profile URL per result) and one with
+ * server-rendered result cards. Try the structured data first, then the cards.
+ * Profile pages sit behind a bot challenge, so we never fetch them.
  */
 export const bbb: SiteSearchConfig = {
   searchUrl: (b) => `https://www.bbb.org/search?find_country=USA&find_text=${q(b.name)}&find_loc=${q(loc(b))}`,
   detailBlocked: true,
-  extractResults: (html) => {
+  extractResults: (html, pageUrl) => {
+    const structured = extractJsonLdAll(html, pageUrl).filter((o) => /\/profile\//.test(o.url));
+    if (structured.length) return structured;
     const $ = cheerio.load(html);
     const out: ObservedListing[] = [];
     const seen = new Set<string>();

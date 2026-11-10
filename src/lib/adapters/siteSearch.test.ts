@@ -73,6 +73,15 @@ describe("site-search adapters against real page fixtures", () => {
     expect(f.evidence.candidates.length).toBeGreaterThanOrEqual(2);
   });
 
+  it("BBB (JSON-LD rendering): reads the SearchResultsPage ItemList and strips <em> highlight tags", async () => {
+    const a = new SiteSearchAdapter(getDirectory("bbb"), site.bbb);
+    const baker: CanonicalBusiness = { id: "b", name: "Baker Brothers Plumbing, Air & Electric", street: "2615 Big Town Blvd", city: "Mesquite", state: "TX", postalCode: "75150", country: "US", phoneE164: "+19723710082", categories: ["home_services"], hideAddress: false };
+    const f = await a.discover(baker, ctx([[/bbb\.org\/search/, fx("bbb-search-jsonld.html")]]));
+    expect(f.state).toBe("verified_accurate");
+    expect(f.observed?.name).toBe("Baker Brothers Plumbing, Air & Electric");
+    expect(f.listingUrl).toBe("https://www.bbb.org/us/tx/mesquite/profile/plumber/baker-brothers-plumbing-air-electric-0875-30000632");
+  });
+
   it("reports unable_to_verify when the directory blocks the fetch, never not_found", async () => {
     const a = new SiteSearchAdapter(getDirectory("yellowpages"), site.yellowpages);
     const f = await a.discover(zoo, ctx([]));
