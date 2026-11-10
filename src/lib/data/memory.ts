@@ -53,8 +53,8 @@ export class MemoryStore implements Store {
   }
   async listFindings(scanId: string) { return [...(mem.findings.get(scanId) ?? [])]; }
 
-  async createOrder(o: Omit<OrderRecord, "id" | "createdAt">) {
-    const rec: OrderRecord = { ...o, id: randomUUID(), createdAt: new Date().toISOString() };
+  async createOrder(o: Omit<OrderRecord, "id" | "createdAt" | "refundedCents">) {
+    const rec: OrderRecord = { ...o, refundedCents: 0, id: randomUUID(), createdAt: new Date().toISOString() };
     mem.orders.set(rec.id, rec);
     return rec;
   }
@@ -68,10 +68,10 @@ export class MemoryStore implements Store {
     if (cur) mem.orders.set(id, { ...cur, ...patch });
   }
 
-  async createSubmissions(subs: Omit<SubmissionRecord, "id" | "updatedAt" | "log" | "humanMinutes">[]) {
+  async createSubmissions(subs: Omit<SubmissionRecord, "id" | "updatedAt" | "log" | "humanMinutes" | "billingStatus">[]) {
     const out: SubmissionRecord[] = [];
     for (const s of subs) {
-      const rec: SubmissionRecord = { ...s, id: randomUUID(), humanMinutes: 0, updatedAt: new Date().toISOString(), log: [{ at: new Date().toISOString(), event: "prepared" }] };
+      const rec: SubmissionRecord = { ...s, id: randomUUID(), humanMinutes: 0, billingStatus: "charged", updatedAt: new Date().toISOString(), log: [{ at: new Date().toISOString(), event: "prepared" }] };
       mem.submissions.set(rec.id, rec);
       out.push(rec);
     }

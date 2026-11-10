@@ -20,7 +20,8 @@ const SPECIAL: Record<string, (def: (typeof DIRECTORIES)[number]) => DirectoryAd
   bbb: (def) => new SiteSearchAdapter(def, site.bbb),
 };
 
-export const ADAPTERS: DirectoryAdapter[] = DIRECTORIES.filter((d) => d.active).map((def) =>
+/** Directories with discovery "none" (aggregators) are submitted and verified downstream, never scanned. */
+export const ADAPTERS: DirectoryAdapter[] = DIRECTORIES.filter((d) => d.active && d.discovery !== "none").map((def) =>
   SPECIAL[def.id] ? SPECIAL[def.id](def) : new SearchFetchAdapter(def),
 );
 

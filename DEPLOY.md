@@ -41,6 +41,8 @@ Everything degrades gracefully: any key you leave out keeps that part in demo mo
 1. Create a webhook endpoint: `https://<your-domain>/api/stripe/webhook`, event `checkout.session.completed`.
 2. Set `STRIPE_SECRET_KEY` and the endpoint's `STRIPE_WEBHOOK_SECRET`.
 3. Test with `stripe listen --forward-to localhost:3000/api/stripe/webhook` locally.
+4. Refunds: the daily cron issues partial refunds against the order's payment intent. The Stripe key needs refund
+   permission (standard secret keys have it). Without Stripe configured, lines are marked for manual refund in `/admin`.
 
 ## 4. Resend
 

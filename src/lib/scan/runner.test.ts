@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { runScan } from "./runner";
 import { createMockContext } from "./mock";
 import type { CanonicalBusiness } from "@/lib/domain/types";
+import { DIRECTORIES } from "@/lib/directories/registry";
+
+const SCANNED = DIRECTORIES.filter((d) => d.active && d.discovery !== "none").length;
 
 const biz: CanonicalBusiness = {
   id: "b1", name: "Lone Star Plumbing LLC", street: "4521 N Beltline Rd Ste 200", city: "Irving", state: "TX",
@@ -13,9 +16,9 @@ describe("runScan with mock context", () => {
   it("produces one finding per active directory and streams progress", async () => {
     const progress: number[] = [];
     const findings = await runScan(biz, createMockContext(biz), { onFinding: (_f, p) => { progress.push(p.done); } });
-    expect(findings.length).toBe(15);
-    expect(new Set(findings.map((f) => f.directoryId)).size).toBe(15);
-    expect(Math.max(...progress)).toBe(15);
+    expect(findings.length).toBe(SCANNED);
+    expect(new Set(findings.map((f) => f.directoryId)).size).toBe(SCANNED);
+    expect(Math.max(...progress)).toBe(SCANNED);
     const states = new Set(findings.map((f) => f.state));
     expect(states.has("verified_accurate")).toBe(true);
     expect(states.has("not_found")).toBe(true);

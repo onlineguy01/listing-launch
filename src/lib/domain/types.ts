@@ -22,7 +22,7 @@ export type SubmissionStatus =
 
 export type OwnerTaskType = "email_confirm" | "sms_code" | "oauth" | "upload" | "review" | "other";
 
-export type DirectoryTier = "maps" | "review" | "general" | "industry" | "local";
+export type DirectoryTier = "maps" | "review" | "aggregator" | "general" | "industry" | "local";
 
 /** Weekly hours: day -> list of [open, close] in 24h "HH:MM". Empty list = closed. */
 export type Hours = Partial<Record<"mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun", [string, string][]>>;
@@ -116,6 +116,14 @@ export interface DirectoryDefinition {
   notes?: string;
   /** URL of the "add your business" / claim page, for the ops task card. */
   submitUrl?: string;
+  /**
+   * False when only the owner can create or claim the listing (identity verification by
+   * phone, postcard, video, or their own Google/Facebook/Apple account). Such directories
+   * are report-only: we show whether the listing exists and is correct, and never sell work on them.
+   */
+  sellable: boolean;
+  /** Short owner-facing instruction for report-only directories. */
+  ownerHowTo?: string;
 }
 
 export interface Eligibility {

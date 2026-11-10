@@ -20,12 +20,13 @@ export function OpsQueue({ rows }: { rows: Row[] }) {
 
   const [notice, setNotice] = useState<string | null>(null);
 
-  async function update(id: string, status: string, listingUrl?: string, ownerInstructions?: string, minutes = 0) {
-    const r = await fetch("/api/admin/submissions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status, listingUrl, ownerInstructions, minutes }) });
+  async function update(id: string, status: string, listingUrl?: string, ownerInstructions?: string, minutes = 0, attestLive = false) {
+    const r = await fetch("/api/admin/submissions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status, listingUrl, ownerInstructions, minutes, attestLive }) });
     if (r.ok) {
       const j = await r.json();
-      setState((s) => s.map((x) => (x.sub.id === id ? { ...x, sub: { ...x.sub, humanMinutes: x.sub.humanMinutes + minutes } } : x)));
-      setNotice(status === "verification_required" ? "Saved. Owner emailed with instructions." : status === "published" ? "Saved. Re-checks scheduled at 3, 14 and 30 days." : j.completionSent ? "Saved. Order complete, completion report emailed." : "Saved.");
+      setState((s) => s.map((x) => (x.sub.id === id ? { ...x, sub: { ...x.sub, humanMinutes: x.sub.humanMinutes + minutes, billingStatus: j.verification?.startsWith("verified") ? "verified" : x.sub.billingStatus } } : x)));
+      const base = status === "verification_required" ? "Saved. Owner emailed with instructions." : status === "published" ? "Saved. Re-checks scheduled at 3, 14 and 30 days." : j.completionSent ? "Saved. Order complete, completion report emailed." : "Saved.";
+      setNotice(j.verification ? `${base} ${String(j.verification)[0].toUpperCase()}${String(j.verification).slice(1)}.` : base);
     }
     if (r.ok) setState((s) => s.map((x) => (x.sub.id === id ? { ...x, sub: { ...x.sub, status: status as SubmissionRecord["status"], listingUrl: listingUrl || x.sub.listingUrl } } : x)));
   }
@@ -38,7 +39,7 @@ export function OpsQueue({ rows }: { rows: Row[] }) {
         <details key={sub.id} className="card p-4">
           <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2">
             <span className="font-medium">{dir.name} · {sub.action} · <span className="text-muted">{biz?.name}</span></span>
-            <span className="text-xs rounded-full bg-background px-2 py-0.5">{sub.status}</span>
+            <span className="flex gap-2 text-xs"><span className="rounded-full bg-background px-2 py-0.5">{sub.status}</span><span className={`rounded-full px-2 py-0.5 ${sub.billingStatus === "verified" ? "bg-ok/10 text-ok" : sub.billingStatus === "refunded" ? "bg-warn/10 text-warn" : "bg-neutral/10 text-neutral"}`}>{sub.billingStatus} · ${(sub.priceCents / 100).toFixed(2)}</span></span>
           </summary>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <div className="grid gap-1 text-sm">
@@ -68,7 +69,7 @@ export function OpsQueue({ rows }: { rows: Row[] }) {
             </div>
             <form
               className="grid gap-2 text-sm"
-              onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); update(sub.id, String(fd.get("status")), String(fd.get("listingUrl") || ""), String(fd.get("ownerInstructions") || ""), Number(fd.get("minutes") || 0)); (e.target as HTMLFormElement).minutes.value = ""; }}
+              onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); update(sub.id, String(fd.get("status")), String(fd.get("listingUrl") || ""), String(fd.get("ownerInstructions") || ""), Number(fd.get("minutes") || 0), fd.get("attestLive") === "on"); (e.target as HTMLFormElement).minutes.value = ""; }}
             >
               <label className="label">Set status</label>
               <select name="status" className="input" defaultValue={sub.status}>
@@ -76,6 +77,7 @@ export function OpsQueue({ rows }: { rows: Row[] }) {
               </select>
               <label className="label">Listing URL (once published)</label>
               <input name="listingUrl" className="input" defaultValue={sub.listingUrl ?? ""} placeholder="https://…" />
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="attestLive" /> I checked the live listing myself (for sites our scanner cannot read)</label>
               <label className="label">Minutes you spent on this step (adds to {sub.humanMinutes} logged)</label>
               <input name="minutes" className="input" type="number" min={0} max={600} placeholder="e.g. 8" />
               <label className="label">Instructions for the owner (sent when status is “verification_required”)</label>

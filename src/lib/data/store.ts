@@ -3,6 +3,8 @@ import type { Quote } from "@/lib/scan/quote";
 
 export type ScanStatus = "queued" | "running" | "complete" | "failed";
 export type OrderStatus = "draft" | "paid" | "in_progress" | "complete" | "refunded";
+export type BillingStatus = "charged" | "verified" | "refunded" | "substituted";
+export type LineAction = "create" | "correct" | "verify" | "review";
 
 export interface ScanRecord {
   id: string;
@@ -26,7 +28,10 @@ export interface OrderRecord {
   paidAt?: string;
   customerEmail?: string;
   quote: Quote;
+  packageTier?: string;
   stripeCheckoutSessionId?: string;
+  stripePaymentIntentId?: string;
+  refundedCents: number;
   completionReportSentAt?: string;
 }
 
@@ -44,11 +49,19 @@ export interface SubmissionRecord {
   orderId: string;
   businessId: string;
   directoryId: string;
-  action: "create" | "correct";
+  action: LineAction;
   status: "prepared" | "submitted" | "verification_required" | "published" | "rejected" | "not_eligible" | "failed";
   method: "api" | "form" | "manual" | "none";
   listingUrl?: string;
   humanMinutes: number;
+  /** Billing under the guarantee. */
+  priceCents: number;
+  billingStatus: BillingStatus;
+  verifiedAt?: string;
+  verifiedBy?: "scanner" | "owner" | "ops";
+  refundedAt?: string;
+  stripeRefundId?: string;
+  refundNote?: string;
   updatedAt: string;
   log: { at: string; event: string; detail?: string }[];
 }
@@ -64,12 +77,12 @@ export interface Store {
   addFinding(scanId: string, businessId: string, f: Finding): Promise<void>;
   listFindings(scanId: string): Promise<Finding[]>;
 
-  createOrder(o: Omit<OrderRecord, "id" | "createdAt">): Promise<OrderRecord>;
+  createOrder(o: Omit<OrderRecord, "id" | "createdAt" | "refundedCents">): Promise<OrderRecord>;
   getOrder(id: string): Promise<OrderRecord | null>;
   getOrderByCheckoutSession(sessionId: string): Promise<OrderRecord | null>;
   updateOrder(id: string, patch: Partial<OrderRecord>): Promise<void>;
 
-  createSubmissions(subs: Omit<SubmissionRecord, "id" | "updatedAt" | "log" | "humanMinutes">[]): Promise<SubmissionRecord[]>;
+  createSubmissions(subs: Omit<SubmissionRecord, "id" | "updatedAt" | "log" | "humanMinutes" | "billingStatus">[]): Promise<SubmissionRecord[]>;
   listSubmissions(filter: { orderId?: string; businessId?: string }): Promise<SubmissionRecord[]>;
   listAllSubmissions(): Promise<SubmissionRecord[]>;
   getSubmission(id: string): Promise<SubmissionRecord | null>;

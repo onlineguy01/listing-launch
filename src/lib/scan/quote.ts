@@ -4,7 +4,7 @@ import { getDirectory } from "@/lib/directories/registry";
 export interface QuoteItem {
   directoryId: string;
   directoryName: string;
-  action: "create" | "correct";
+  action: "create" | "correct" | "verify" | "review";
   priceCents: number;
   feeCents: number;
   findingState: Finding["state"];

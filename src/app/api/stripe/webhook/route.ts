@@ -17,7 +17,8 @@ export async function POST(req: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const orderId = session.metadata?.orderId;
-    if (orderId && session.payment_status === "paid") await markOrderPaid(orderId);
+    const pi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
+    if (orderId && session.payment_status === "paid") await markOrderPaid(orderId, pi);
   }
   return NextResponse.json({ received: true });
 }

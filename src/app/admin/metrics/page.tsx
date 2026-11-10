@@ -20,9 +20,13 @@ export default async function MetricsPage() {
   const byStatus = subs.reduce<Record<string, number>>((m, s) => ((m[s.status] = (m[s.status] ?? 0) + 1), m), {});
   const terminal = subs.filter((s) => ["published", "rejected", "failed", "not_eligible"].includes(s.status));
   const published = byStatus.published ?? 0;
-  const byDir = subs.reduce<Record<string, { total: number; published: number }>>((m, s) => {
-    const d = (m[s.directoryId] ??= { total: 0, published: 0 }); d.total++; if (s.status === "published") d.published++; return m;
+  const byDir = subs.reduce<Record<string, { total: number; published: number; verified: number; refunded: number }>>((m, s) => {
+    const d = (m[s.directoryId] ??= { total: 0, published: 0, verified: 0, refunded: 0 }); d.total++;
+    if (s.status === "published") d.published++; if (s.billingStatus === "verified") d.verified++; if (s.billingStatus === "refunded") d.refunded++; return m;
   }, {});
+  const refundedCents = orders.reduce((a, o) => a + o.refundedCents, 0);
+  const verifiedLines = subs.filter((s) => s.billingStatus === "verified").length;
+  const refundedLines = subs.filter((s) => s.billingStatus === "refunded").length;
   const humanMinutes = subs.reduce((a, s) => a + s.humanMinutes, 0);
 
   const Tile = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
@@ -34,28 +38,28 @@ export default async function MetricsPage() {
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-accent">Pilot scorecard</p>
         <h1 className="text-2xl font-semibold">Funnel and fulfillment</h1>
-        <p className="text-sm text-muted">The four numbers that set the price: scan cost, scan → purchase conversion, human minutes per published listing, and publication rate.</p>
+        <p className="text-sm text-muted">The numbers that set the price: scan → purchase conversion, human minutes per verified listing, and refund rate. A directory refunding more than a third of the time (highlighted) should leave the paid packages.</p>
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Tile label="Scans completed" value={String(complete.length)} sub={`${scans.filter((s) => s.mode === "mock").length} in demo mode`} />
         <Tile label="Reports unlocked" value={String(unlocked)} sub={`${pct(unlocked, complete.length)} of completed scans`} />
         <Tile label="Paid orders" value={String(paid.length)} sub={`${pct(paid.length, complete.length)} scan → purchase`} />
-        <Tile label="Revenue" value={formatCents(revenue)} sub={paid.length ? `${formatCents(Math.round(revenue / paid.length))} avg order · ${items} listings` : undefined} />
+        <Tile label="Net revenue" value={formatCents(revenue - refundedCents)} sub={paid.length ? `${formatCents(revenue)} gross · ${formatCents(refundedCents)} refunded · ${items} listings` : undefined} />
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Tile label="Submissions" value={String(subs.length)} />
         <Tile label="Published" value={String(published)} sub={`${pct(published, terminal.length)} of finished jobs`} />
-        <Tile label="Need owner action" value={String(byStatus.verification_required ?? 0)} />
+        <Tile label="Verified live" value={String(verifiedLines)} sub={`${pct(verifiedLines, subs.length)} of lines · ${refundedLines} refunded (${pct(refundedLines, subs.length)})`} />
         <Tile label="Human minutes logged" value={String(humanMinutes)} sub={published ? `${(humanMinutes / published).toFixed(1)} per published listing` : "log minutes on jobs to track"} />
       </div>
       <section className="card overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-background text-left text-xs text-muted"><tr><th className="px-4 py-2">Directory</th><th className="px-4 py-2">Jobs</th><th className="px-4 py-2">Published</th><th className="px-4 py-2">Rate</th></tr></thead>
+          <thead className="bg-background text-left text-xs text-muted"><tr><th className="px-4 py-2">Directory</th><th className="px-4 py-2">Jobs</th><th className="px-4 py-2">Verified live</th><th className="px-4 py-2">Refunded</th><th className="px-4 py-2">Refund rate</th></tr></thead>
           <tbody>
-            {Object.entries(byDir).sort((a, b) => b[1].total - a[1].total).map(([id, v]) => (
-              <tr key={id} className="border-t border-border"><td className="px-4 py-2 font-medium">{getDirectory(id).name}</td><td className="px-4 py-2">{v.total}</td><td className="px-4 py-2">{v.published}</td><td className="px-4 py-2">{pct(v.published, v.total)}</td></tr>
+            {Object.entries(byDir).sort((a, b) => b[1].refunded / b[1].total - a[1].refunded / a[1].total).map(([id, v]) => (
+              <tr key={id} className={`border-t border-border ${v.total >= 3 && v.refunded / v.total > 1 / 3 ? "bg-warn/5" : ""}`}><td className="px-4 py-2 font-medium">{getDirectory(id).name}</td><td className="px-4 py-2">{v.total}</td><td className="px-4 py-2">{v.verified}</td><td className="px-4 py-2">{v.refunded}</td><td className="px-4 py-2">{pct(v.refunded, v.total)}</td></tr>
             ))}
-            {!subs.length && <tr><td colSpan={4} className="px-4 py-3 text-muted">No submissions yet.</td></tr>}
+            {!subs.length && <tr><td colSpan={5} className="px-4 py-3 text-muted">No submissions yet.</td></tr>}
           </tbody>
         </table>
       </section>

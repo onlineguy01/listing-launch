@@ -35,9 +35,10 @@ export function ScanProgress({ scanId }: { scanId: string }) {
     return () => { alive = false; };
   }, [scanId, router]);
 
+  const scanned = DIRECTORIES.filter((d) => d.active && d.discovery !== "none");
   const byId = new Map(data?.findings.map((f) => [f.directoryId, f]) ?? []);
   const done = data?.scan.directoriesDone ?? 0;
-  const total = data?.scan.directoriesTotal ?? DIRECTORIES.length;
+  const total = data?.scan.directoriesTotal ?? scanned.length;
 
   return (
     <div className="grid gap-6">
@@ -54,7 +55,7 @@ export function ScanProgress({ scanId }: { scanId: string }) {
         <div className="h-full bg-accent transition-all" style={{ width: `${(done / total) * 100}%` }} />
       </div>
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {DIRECTORIES.map((d) => {
+        {scanned.map((d) => {
           const f = byId.get(d.id);
           return (
             <li key={d.id} className="card flex items-center justify-between px-4 py-3">

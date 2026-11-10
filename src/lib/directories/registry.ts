@@ -22,6 +22,8 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     active: true,
     submitUrl: "https://business.google.com/create",
     notes: "Discovery via Places API. Creation/claim requires owner OAuth; verification often by postcard or video.",
+    sellable: false,
+    ownerHowTo: "Sign in at business.google.com with the Google account that should own the profile, then claim or create it. Google verifies by video, phone, or postcard.",
   },
   {
     id: "apple",
@@ -40,6 +42,8 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     active: true,
     submitUrl: "https://businessconnect.apple.com/",
     notes: "Requires an Apple ID for the owner. Partner API exists for approved agencies.",
+    sellable: false,
+    ownerHowTo: "Sign in at businessconnect.apple.com with an Apple ID, claim the location, and complete Apple's verification.",
   },
   {
     id: "bing",
@@ -58,6 +62,8 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     active: true,
     submitUrl: "https://www.bingplaces.com/",
     notes: "Can import from Google Business Profile once GBP is verified.",
+    sellable: false,
+    ownerHowTo: "Sign in at bingplaces.com. Fastest path: import your verified Google Business Profile.",
   },
   {
     id: "yelp",
@@ -76,6 +82,8 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     active: true,
     submitUrl: "https://biz.yelp.com/signup",
     notes: "Discovery via Yelp Fusion phone search. Automation prohibited; owner-assisted claim only.",
+    sellable: false,
+    ownerHowTo: "Go to biz.yelp.com, search for your business, and claim it. Yelp verifies with a call or text to the business phone.",
   },
   {
     id: "facebook",
@@ -94,13 +102,15 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     active: true,
     submitUrl: "https://www.facebook.com/pages/create",
     notes: "Owner must create or grant page access. No automated creation.",
+    sellable: false,
+    ownerHowTo: "Create or claim the Page from your personal Facebook account at facebook.com/pages/create.",
   },
   {
     id: "nextdoor",
     name: "Nextdoor",
     homepage: "https://business.nextdoor.com/",
     domains: ["nextdoor.com"],
-    tier: "local",
+    tier: "review",
     discovery: "search_fetch",
     submission: "manual",
     ownerActions: ["email_confirm"],
@@ -111,13 +121,55 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     estHumanMinutes: 10,
     active: true,
     submitUrl: "https://business.nextdoor.com/",
+    sellable: false,
+    ownerHowTo: "Create your business page at business.nextdoor.com; Nextdoor verifies with a code sent to the business phone.",
+  },
+  {
+    id: "dataaxle",
+    name: "Data Axle",
+    homepage: "https://www.dataaxle.com/",
+    domains: ["dataaxle.com"],
+    tier: "aggregator",
+    discovery: "none",
+    submission: "manual",
+    ownerActions: ["email_confirm"],
+    eligibleCountries: ["US"],
+    allowsHiddenAddress: true,
+    externalFeeCents: 0,
+    basePriceCents: 1500,
+    estHumanMinutes: 10,
+    active: true,
+    submitUrl: "https://www.dataaxle.com/",
+    notes: "Data aggregator (formerly Infogroup). Feeds hundreds of downstream directories and apps. Verified by downstream propagation, not on its own site.",
+
+    sellable: true,
+  },
+  {
+    id: "localeze",
+    name: "Neustar Localeze",
+    homepage: "https://www.neustarlocaleze.biz/",
+    domains: ["neustarlocaleze.biz", "localeze.com"],
+    tier: "aggregator",
+    discovery: "none",
+    submission: "manual",
+    ownerActions: ["email_confirm"],
+    eligibleCountries: ["US"],
+    allowsHiddenAddress: true,
+    externalFeeCents: 0,
+    basePriceCents: 1500,
+    estHumanMinutes: 10,
+    active: false,
+    submitUrl: "https://www.neustarlocaleze.biz/",
+    notes: "Paid aggregator; confirm the current annual fee and set externalFeeCents before activating. Pass-through, not marked up.",
+
+    sellable: true,
   },
   {
     id: "foursquare",
     name: "Foursquare",
     homepage: "https://foursquare.com/",
     domains: ["foursquare.com"],
-    tier: "general",
+    tier: "aggregator",
     discovery: "api",
     submission: "form",
     ownerActions: [],
@@ -129,6 +181,8 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     active: true,
     submitUrl: "https://foursquare.com/add-place",
     notes: "Places API for discovery. Feeds many downstream map/data providers.",
+
+    sellable: true,
   },
   {
     id: "yellowpages",
@@ -146,6 +200,8 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     estHumanMinutes: 8,
     active: true,
     submitUrl: "https://accounts.yellowpages.com/register",
+
+    sellable: true,
   },
   {
     id: "bbb",
@@ -164,6 +220,8 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     active: true,
     submitUrl: "https://www.bbb.org/get-listed",
     notes: "Free profile; accreditation is paid and optional.",
+
+    sellable: true,
   },
   {
     id: "manta",
@@ -181,6 +239,8 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     estHumanMinutes: 6,
     active: true,
     submitUrl: "https://www.manta.com/claim",
+
+    sellable: true,
   },
   {
     id: "merchantcircle",
@@ -198,6 +258,8 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     estHumanMinutes: 6,
     active: true,
     submitUrl: "https://www.merchantcircle.com/signup",
+
+    sellable: true,
   },
   {
     id: "superpages",
@@ -215,6 +277,8 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     estHumanMinutes: 6,
     active: true,
     submitUrl: "https://www.superpages.com/",
+
+    sellable: true,
   },
   {
     id: "linkedin",
@@ -232,6 +296,8 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     estHumanMinutes: 10,
     active: true,
     submitUrl: "https://www.linkedin.com/company/setup/new/",
+    sellable: false,
+    ownerHowTo: "Create the Company Page from your personal LinkedIn account at linkedin.com/company/setup/new.",
   },
   {
     id: "angi",
@@ -251,6 +317,8 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     active: true,
     submitUrl: "https://www.angi.com/pro",
     notes: "Home services only. Free profile; leads are paid and optional.",
+    sellable: false,
+    ownerHowTo: "Sign up at angi.com/pro; Angi verifies the business phone before the profile goes live.",
   },
   {
     id: "houzz",
@@ -270,6 +338,8 @@ export const DIRECTORIES: DirectoryDefinition[] = [
     active: true,
     submitUrl: "https://www.houzz.com/pro",
     notes: "Home improvement and design only.",
+
+    sellable: true,
   },
 ];
 

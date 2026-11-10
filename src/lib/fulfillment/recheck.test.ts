@@ -22,8 +22,8 @@ describe("publication re-checks and completion report (memory store, mock contex
     ];
     const order = await store.createOrder({ businessId: biz.id, scanId: scan.id, status: "paid", quote: buildQuote(findings), customerEmail: "owner@example.com" });
     const [bbb, manta] = await store.createSubmissions([
-      { orderId: order.id, businessId: biz.id, directoryId: "bbb", action: "create", status: "published", method: "manual" },
-      { orderId: order.id, businessId: biz.id, directoryId: "manta", action: "create", status: "published", method: "manual" },
+      { orderId: order.id, businessId: biz.id, directoryId: "bbb", action: "create", status: "published", method: "manual", priceCents: 1000 },
+      { orderId: order.id, businessId: biz.id, directoryId: "manta", action: "create", status: "published", method: "manual", priceCents: 1000 },
     ]);
     // Mock context serves a page for this URL shape; a bogus URL returns no page → not_found/unable.
     await store.updateSubmission(bbb.id, { listingUrl: "https://www.bbb.org/biz/lone-star-plumbing-llc-irving" });

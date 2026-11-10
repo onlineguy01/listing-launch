@@ -93,6 +93,20 @@ supabase/migrations/        Postgres schema with RLS
 
 Yelp, Manta, Angi, LinkedIn and Facebook block server-side page fetches, so they need API access or an owner-assisted check.
 
+## Pricing model: packages, owner-managed profiles, and the guarantee
+
+- **Owner-managed profiles are never sold.** Google Business Profile, Apple, Bing, Yelp, Facebook, Nextdoor, LinkedIn
+  and Angi require the owner to verify by phone, postcard, video or their own account. They appear in every report
+  with a verdict (accurate / needs correction / not found / could not verify) and instructions, free. Flag: `sellable: false`.
+- **Two packages** built only from sellable directories: Essentials (aggregators + general directories) and Complete
+  (plus industry and local). Prices via `PRICE_ESSENTIALS_CENTS` / `PRICE_COMPLETE_CENTS`. Directories we could not
+  check are sold as "submit and verify" like any other line.
+- **Per-line billing.** The package price is split evenly across actionable lines. Each line is `charged` until it is
+  `verified` (scanner on publish, daily re-check, ops attestation, or the owner clicking "Yes, it's live").
+- **30-day guarantee.** The daily cron refunds every line still unverified 30 days after payment through Stripe
+  partial refunds, itemized on the order page and completion report. Refund rate per directory is on `/admin/metrics`.
+- `/terms` states all of this in plain English.
+
 ## Finding states
 
 | State | Meaning | Quoted? |

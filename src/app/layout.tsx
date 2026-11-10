@@ -33,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
         <footer className="border-t border-border py-6 text-center text-xs text-muted">
-          {DISCLAIMER}
+          {DISCLAIMER} <Link href="/terms" className="hover:text-foreground underline">Terms</Link>
         </footer>
       </body>
     </html>

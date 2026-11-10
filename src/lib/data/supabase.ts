@@ -59,16 +59,16 @@ export class SupabaseStore implements Store {
     })) as Finding[];
   }
 
-  async createOrder(o: Omit<OrderRecord, "id" | "createdAt">) {
+  async createOrder(o: Omit<OrderRecord, "id" | "createdAt" | "refundedCents">) {
     const { data, error } = await this.sb.from("orders").insert({
-      business_id: o.businessId, scan_job_id: o.scanId, status: o.status, package_name: o.quote.packageName,
+      business_id: o.businessId, scan_job_id: o.scanId, status: o.status, package_name: o.quote.packageName, package_tier: o.packageTier,
       subtotal_cents: o.quote.subtotalCents, fees_cents: o.quote.feesCents, total_cents: o.quote.totalCents,
       customer_email: o.customerEmail, stripe_checkout_session_id: o.stripeCheckoutSessionId,
     }).select().single();
     if (error) throw error;
     const items = o.quote.items.map((i) => ({ order_id: data.id, directory_id: i.directoryId, action: i.action, price_cents: i.priceCents + i.feeCents }));
     if (items.length) await this.sb.from("order_items").insert(items);
-    return { ...o, id: data.id, createdAt: data.created_at };
+    return { ...o, refundedCents: 0, id: data.id, createdAt: data.created_at };
   }
   async getOrder(id: string) {
     const { data } = await this.sb.from("orders").select("*, order_items(*)").eq("id", id).maybeSingle();
@@ -81,11 +81,12 @@ export class SupabaseStore implements Store {
   async updateOrder(id: string, patch: Partial<OrderRecord>) {
     await this.sb.from("orders").update({
       status: patch.status, paid_at: patch.paidAt, customer_email: patch.customerEmail,
-      stripe_checkout_session_id: patch.stripeCheckoutSessionId, completion_report_sent_at: patch.completionReportSentAt,
+      stripe_checkout_session_id: patch.stripeCheckoutSessionId, stripe_payment_intent_id: patch.stripePaymentIntentId,
+      refunded_cents: patch.refundedCents, completion_report_sent_at: patch.completionReportSentAt,
     }).eq("id", id);
   }
 
-  async createSubmissions(subs: Omit<SubmissionRecord, "id" | "updatedAt" | "log" | "humanMinutes">[]) {
+  async createSubmissions(subs: Omit<SubmissionRecord, "id" | "updatedAt" | "log" | "humanMinutes" | "billingStatus">[]) {
     if (!subs.length) return [];
     // Need order_item ids: look them up by (order, directory)
     const orderId = subs[0].orderId;
@@ -93,7 +94,7 @@ export class SupabaseStore implements Store {
     const itemId = new Map((items ?? []).map((i) => [i.directory_id, i.id]));
     const rows = subs.map((s) => ({
       order_item_id: itemId.get(s.directoryId), business_id: s.businessId, directory_id: s.directoryId,
-      status: s.status, method: s.method, log: [{ at: new Date().toISOString(), event: "prepared" }],
+      status: s.status, method: s.method, action: s.action, price_cents: s.priceCents, log: [{ at: new Date().toISOString(), event: "prepared" }],
     }));
     const { data, error } = await this.sb.from("submission_jobs").insert(rows).select("*, order_items(order_id, action)");
     if (error) throw error;
@@ -152,7 +153,11 @@ export class SupabaseStore implements Store {
     const { data: cur } = await this.sb.from("submission_jobs").select("log, human_minutes").eq("id", id).single();
     const log = logEvent ? [...(cur?.log ?? []), { at: new Date().toISOString(), event: logEvent }] : undefined;
     const human_minutes = addMinutes ? (cur?.human_minutes ?? 0) + addMinutes : undefined;
-    await this.sb.from("submission_jobs").update({ status: patch.status, listing_url: patch.listingUrl, method: patch.method, log, human_minutes }).eq("id", id);
+    await this.sb.from("submission_jobs").update({
+      status: patch.status, listing_url: patch.listingUrl, method: patch.method, log, human_minutes,
+      billing_status: patch.billingStatus, verified_at: patch.verifiedAt, verified_by: patch.verifiedBy,
+      refunded_at: patch.refundedAt, stripe_refund_id: patch.stripeRefundId, refund_note: patch.refundNote,
+    }).eq("id", id);
   }
 }
 
@@ -198,6 +203,7 @@ function rowToOrder(r: any): OrderRecord {
   return {
     id: r.id, businessId: r.business_id, scanId: r.scan_job_id, status: r.status, createdAt: r.created_at,
     paidAt: r.paid_at ?? undefined, customerEmail: r.customer_email ?? undefined, stripeCheckoutSessionId: r.stripe_checkout_session_id ?? undefined,
+    stripePaymentIntentId: r.stripe_payment_intent_id ?? undefined, packageTier: r.package_tier ?? undefined, refundedCents: r.refunded_cents ?? 0,
     completionReportSentAt: r.completion_report_sent_at ?? undefined,
     quote: { packageName: r.package_name, items, subtotalCents: r.subtotal_cents, feesCents: r.fees_cents, totalCents: r.total_cents, excluded: [] },
   };
@@ -205,7 +211,10 @@ function rowToOrder(r: any): OrderRecord {
 function rowToSub(r: any): SubmissionRecord {
   return {
     id: r.id, orderId: r.order_items?.order_id, businessId: r.business_id, directoryId: r.directory_id,
-    action: r.order_items?.action ?? "create", status: r.status, method: r.method, listingUrl: r.listing_url ?? undefined,
-    humanMinutes: r.human_minutes ?? 0, updatedAt: r.updated_at, log: r.log ?? [],
+    action: r.action ?? r.order_items?.action ?? "create", status: r.status, method: r.method, listingUrl: r.listing_url ?? undefined,
+    humanMinutes: r.human_minutes ?? 0, priceCents: r.price_cents ?? 0, billingStatus: r.billing_status ?? "charged",
+    verifiedAt: r.verified_at ?? undefined, verifiedBy: r.verified_by ?? undefined, refundedAt: r.refunded_at ?? undefined,
+    stripeRefundId: r.stripe_refund_id ?? undefined, refundNote: r.refund_note ?? undefined,
+    updatedAt: r.updated_at, log: r.log ?? [],
   };
 }

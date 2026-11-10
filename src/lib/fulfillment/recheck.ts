@@ -3,6 +3,7 @@ import { ADAPTER_BY_ID } from "@/lib/adapters";
 import { createLiveContext, hasLiveKeys } from "@/lib/scan/context";
 import { createMockContext } from "@/lib/scan/mock";
 import { maybeEmailCompletion } from "@/lib/email/send";
+import { markVerified } from "./verify";
 
 export interface RecheckSummary { due: number; stillLive: number; changed: number; missing: number; unverifiable: number }
 
@@ -29,8 +30,8 @@ export async function runDuePublicationChecks(now = new Date()): Promise<Recheck
     const result = finding?.state ?? "unable_to_verify";
     await store.completePublicationCheck(check.id, result, sub.listingUrl);
 
-    if (result === "verified_accurate") summary.stillLive++;
-    else if (result === "incorrect") { summary.changed++; await store.updateSubmission(sub.id, {}, `recheck: listing drifted (${finding?.diffs.map((d) => d.field).join(", ")})`); }
+    if (result === "verified_accurate") { summary.stillLive++; if (sub.billingStatus === "charged") await markVerified(sub.id, "scanner", "recheck confirmed live"); }
+    else if (result === "incorrect") { summary.changed++; if (sub.billingStatus === "charged") await markVerified(sub.id, "scanner", "recheck: live, fields differ"); await store.updateSubmission(sub.id, {}, `recheck: listing drifted (${finding?.diffs.map((d) => d.field).join(", ")})`); }
     else if (result === "not_found") { summary.missing++; await store.updateSubmission(sub.id, { status: "failed" }, "recheck: listing no longer found"); }
     else summary.unverifiable++;
     touchedOrders.add(sub.orderId);
