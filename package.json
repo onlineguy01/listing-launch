@@ -9,9 +9,11 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "worker": "tsx --tsconfig tsconfig.scripts.json scripts/worker.ts"
+    "worker": "tsx --tsconfig tsconfig.scripts.json scripts/worker.ts",
+    "seed:sql": "tsx --tsconfig tsconfig.scripts.json scripts/seed-directories.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.7.0",
     "@supabase/supabase-js": "^2.119.0",
     "cheerio": "^1.2.0",
     "libphonenumber-js": "^1.13.15",

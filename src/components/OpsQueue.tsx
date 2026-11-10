@@ -7,6 +7,12 @@ import { formatPhoneDisplay } from "@/lib/scan/normalize";
 
 interface Row { sub: SubmissionRecord; biz: CanonicalBusiness | null; dir: DirectoryDefinition }
 
+function formatHours(h?: CanonicalBusiness["hours"]): string {
+  if (!h) return "";
+  const order = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+  return order.map((d) => { const v = h[d]; return v === undefined ? null : `${d[0].toUpperCase()}${d.slice(1)} ${v.length ? v.map(([a, b]) => `${a}-${b}`).join(", ") : "closed"}`; }).filter(Boolean).join("; ");
+}
+
 const STATUSES = ["prepared", "submitted", "verification_required", "published", "rejected", "failed"] as const;
 
 export function OpsQueue({ rows }: { rows: Row[] }) {
@@ -41,9 +47,18 @@ export function OpsQueue({ rows }: { rows: Row[] }) {
                 ["Street", biz.hideAddress ? "(hidden: service-area business)" : biz.street ?? ""],
                 ["City", biz.city], ["State", biz.state], ["ZIP", biz.postalCode ?? ""], ["Category", biz.categories.join(", ")],
                 ["Owner email", biz.ownerEmail ?? ""],
-              ].map(([k, v]) => (
+                ["Services", (biz.services ?? []).join(", ")],
+                ["Service area", (biz.serviceArea ?? []).join(", ")],
+                ["Founded", biz.yearFounded ? String(biz.yearFounded) : ""],
+                ["Payments", (biz.paymentMethods ?? []).join(", ")],
+                ["Hours", formatHours(biz.hours)],
+                ["Logo URL", biz.logoUrl ?? ""],
+                ["Short description", biz.descriptionShort ?? ""],
+                ["Long description", biz.descriptionLong ?? ""],
+                ["Google connected", biz.googleRefreshTokenEnc ? `yes (${biz.googleAccountEmail ?? "email unknown"})${biz.googleLocationName ? ", existing profile found" : ""}` : "no"],
+              ].filter(([, v]) => v !== "").map(([k, v]) => (
                 <button key={k} type="button" onClick={() => navigator.clipboard.writeText(v)} className="flex justify-between rounded border border-border px-2 py-1 text-left hover:bg-background">
-                  <span className="text-muted">{k}</span><span className="font-mono text-xs">{v}</span>
+                  <span className="text-muted shrink-0 mr-3">{k}</span><span className="font-mono text-xs text-right break-words">{v}</span>
                 </button>
               ))}
               <a className="btn btn-ghost mt-2" href={dir.submitUrl ?? dir.homepage} target="_blank" rel="noreferrer">Open {dir.name} submission page ↗</a>

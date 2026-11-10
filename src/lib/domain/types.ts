@@ -47,6 +47,17 @@ export interface CanonicalBusiness {
   descriptionShort?: string;
   descriptionLong?: string;
   logoUrl?: string;
+  /** Cities / ZIPs served, for service-area businesses. */
+  serviceArea?: string[];
+  /** Owner-supplied list of services offered. Facts only; never invented. */
+  services?: string[];
+  yearFounded?: number;
+  paymentMethods?: string[];
+  /** Google Business Profile connection (owner-authorized OAuth). */
+  googleRefreshTokenEnc?: string;
+  googleAccountEmail?: string;
+  googleLocationName?: string; // e.g. "locations/123"
+  detailsCompletedAt?: string;
 }
 
 /** What we could read off a directory page or API response. All optional. */

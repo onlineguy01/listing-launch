@@ -145,6 +145,9 @@ function bizToRow(b: Partial<CanonicalBusiness>): Record<string, any> {
     ["country", "country"], ["phoneE164", "phone_e164"], ["website", "website"], ["domain", "domain"],
     ["categories", "categories"], ["hours", "hours"], ["hideAddress", "hide_address"], ["googlePlaceId", "google_place_id"],
     ["ownerEmail", "owner_email"], ["descriptionShort", "description_short"], ["descriptionLong", "description_long"], ["logoUrl", "logo_url"],
+    ["serviceArea", "service_area"], ["services", "services"], ["yearFounded", "year_founded"], ["paymentMethods", "payment_methods"],
+    ["googleRefreshTokenEnc", "google_refresh_token_enc"], ["googleAccountEmail", "google_account_email"], ["googleLocationName", "google_location_name"],
+    ["detailsCompletedAt", "details_completed_at"],
   ];
   for (const [k, col] of map) if (b[k] !== undefined) r[col] = b[k];
   return r;
@@ -156,6 +159,10 @@ function rowToBiz(r: any): CanonicalBusiness {
     categories: r.categories ?? [], hours: r.hours ?? undefined, hideAddress: r.hide_address, googlePlaceId: r.google_place_id ?? undefined,
     ownerEmail: r.owner_email ?? undefined, descriptionShort: r.description_short ?? undefined,
     descriptionLong: r.description_long ?? undefined, logoUrl: r.logo_url ?? undefined,
+    serviceArea: r.service_area ?? undefined, services: r.services ?? undefined, yearFounded: r.year_founded ?? undefined,
+    paymentMethods: r.payment_methods ?? undefined, googleRefreshTokenEnc: r.google_refresh_token_enc ?? undefined,
+    googleAccountEmail: r.google_account_email ?? undefined, googleLocationName: r.google_location_name ?? undefined,
+    detailsCompletedAt: r.details_completed_at ?? undefined,
   };
 }
 function rowToScan(r: any): ScanRecord {

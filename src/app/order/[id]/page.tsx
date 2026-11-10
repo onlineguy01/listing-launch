@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getStore } from "@/lib/data";
 import { getDirectory } from "@/lib/directories/registry";
 import { formatCents } from "@/lib/scan/quote";
+import { googleOAuthEnabled } from "@/lib/google/oauth";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +20,9 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   if (!order) notFound();
   const biz = await store.getBusiness(order.businessId);
   const subs = await store.listSubmissions({ orderId: id });
+  const needsDetails = !biz?.detailsCompletedAt;
+  const hasGoogleItem = order.quote.items.some((i) => i.directoryId === "google");
+  const googleConnected = !!biz?.googleRefreshTokenEnc;
 
   return (
     <div className="grid gap-8 max-w-3xl">
@@ -26,7 +31,30 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         <h1 className="text-3xl font-bold">{sp.paid || sp.demo ? "Thank you. We're on it." : "Your order"}</h1>
         <p className="text-muted">{biz?.name} · {formatCents(order.quote.totalCents)} one-time</p>
         {sp.demo && <p className="mt-2 inline-block rounded-md bg-warn/10 px-2 py-1 text-xs text-warn">Demo mode: no payment was taken.</p>}
+        {sp.details === "saved" && <p className="mt-2 inline-block rounded-md bg-ok/10 px-2 py-1 text-xs text-ok">Details saved. Thank you.</p>}
+        {sp.google === "connected" && <p className="mt-2 inline-block rounded-md bg-ok/10 px-2 py-1 text-xs text-ok">Google account connected{sp.gbp === "found" ? " and your existing profile was found" : ""}.</p>}
+        {sp.google && sp.google !== "connected" && <p className="mt-2 inline-block rounded-md bg-warn/10 px-2 py-1 text-xs text-warn">Google connection did not complete ({sp.google}). You can try again below.</p>}
       </div>
+
+      {(needsDetails || (hasGoogleItem && googleOAuthEnabled() && !googleConnected)) && (
+        <section className="card border-accent/40 p-6 grid gap-3">
+          <h2 className="font-semibold">Two quick things we need from you</h2>
+          <ul className="grid gap-3 text-sm">
+            {needsDetails && (
+              <li className="flex flex-wrap items-center justify-between gap-2">
+                <span>Hours, services, service area and a short description. About 3 minutes.</span>
+                <Link href={`/order/${id}/details`} className="btn btn-primary">Complete listing details</Link>
+              </li>
+            )}
+            {hasGoogleItem && googleOAuthEnabled() && !googleConnected && (
+              <li className="flex flex-wrap items-center justify-between gap-2">
+                <span>Google requires the owner to authorize changes to a Business Profile. Sign in with the Google account that owns (or should own) it.</span>
+                <a href={`/api/google/auth?businessId=${order.businessId}&orderId=${id}`} className="btn btn-ghost">Connect Google Business Profile</a>
+              </li>
+            )}
+          </ul>
+        </section>
+      )}
 
       <section className="card p-6 grid gap-3">
         <h2 className="font-semibold">What happens next</h2>
